@@ -21,8 +21,12 @@ export interface CritterSpec {
   bird?: boolean
 }
 
-const AW = 64 // animal canvas width
-const AH = 48 // animal canvas height
+// Animal sprite canvas dimensions. Exported so hit-region math in animals.ts
+// stays in sync with how the critters are actually drawn here.
+export const SPRITE_W = 64
+export const SPRITE_H = 48
+const AW = SPRITE_W
+const AH = SPRITE_H
 
 function newCanvas(w: number, h: number) {
   const c = document.createElement('canvas')

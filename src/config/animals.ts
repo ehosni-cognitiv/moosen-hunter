@@ -1,4 +1,10 @@
-import { makeAnimalFrames, type AnimalState, type CritterSpec } from '../sprites/placeholders'
+import {
+  makeAnimalFrames,
+  SPRITE_W,
+  SPRITE_H,
+  type AnimalState,
+  type CritterSpec,
+} from '../sprites/placeholders'
 import type { SpriteSource } from '../sprites/frames'
 
 /** Scoring rules (hit-location based). */
@@ -32,20 +38,7 @@ export interface AnimalType {
   speed: number
   /** flee running speed */
   fleeSpeed: number
-  hit: HitBoxes
   fps: { idle: number; alert: number; run: number }
-}
-
-const QUADRUPED_HIT: HitBoxes = {
-  head: [0.72, 0.55, 1.0, 0.98],
-  heart: [0.52, 0.26, 0.72, 0.5],
-  body: [0.12, 0.08, 0.96, 0.64],
-}
-
-const BIRD_HIT: HitBoxes = {
-  head: [0.6, 0.4, 0.82, 0.64],
-  heart: [0.4, 0.36, 0.6, 0.56],
-  body: [0.22, 0.28, 0.82, 0.72],
 }
 
 export const ANIMALS: Record<string, AnimalType> = {
@@ -57,7 +50,6 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 0,
     speed: 0.35,
     fleeSpeed: 6,
-    hit: QUADRUPED_HIT,
     fps: { idle: 2, alert: 3, run: 11 },
   },
   elk: {
@@ -68,7 +60,6 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 0,
     speed: 0.4,
     fleeSpeed: 6.8,
-    hit: QUADRUPED_HIT,
     fps: { idle: 2, alert: 3, run: 12 },
   },
   deer: {
@@ -79,7 +70,6 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 0,
     speed: 0.5,
     fleeSpeed: 7.5,
-    hit: QUADRUPED_HIT,
     fps: { idle: 3, alert: 3, run: 13 },
   },
   rabbit: {
@@ -90,7 +80,6 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 0,
     speed: 0.6,
     fleeSpeed: 8.5,
-    hit: QUADRUPED_HIT,
     fps: { idle: 3, alert: 4, run: 15 },
   },
   fox: {
@@ -101,7 +90,6 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 0,
     speed: 0.55,
     fleeSpeed: 8.5,
-    hit: QUADRUPED_HIT,
     fps: { idle: 3, alert: 4, run: 14 },
   },
   grouse: {
@@ -112,9 +100,51 @@ export const ANIMALS: Record<string, AnimalType> = {
     fly: 2.2,
     speed: 0.3,
     fleeSpeed: 9.5,
-    hit: BIRD_HIT,
     fps: { idle: 4, alert: 6, run: 14 },
   },
+}
+
+// Head lift per animation state — MUST match makeAnimalFrames() in
+// placeholders.ts (idle grazes head-down, alert/run raise it).
+const HEAD_LIFT: Record<AnimalState, number> = { idle: 0.12, alert: 0.97, run: 0.7 }
+
+// Bird hit boxes are static (its layout doesn't change much between states).
+const BIRD_HIT: HitBoxes = {
+  head: [0.6, 0.4, 0.82, 0.64],
+  heart: [0.4, 0.36, 0.6, 0.56],
+  body: [0.22, 0.28, 0.82, 0.72],
+}
+
+/** Canvas rect (top-left origin) → UV box (v flipped so v=1 is the top). */
+function uvBox(
+  x0: number,
+  yTop: number,
+  x1: number,
+  yBot: number,
+): [number, number, number, number] {
+  return [x0 / SPRITE_W, 1 - yBot / SPRITE_H, x1 / SPRITE_W, 1 - yTop / SPRITE_H]
+}
+
+/**
+ * Hit regions computed from the sprite's actual geometry for the given
+ * animation state. Because the grazing (idle) pose draws the head low and the
+ * alert/run poses raise it, the head box follows the head — so a shot on the
+ * head you can *see* actually counts as a headshot in every pose.
+ */
+export function hitBoxesFor(type: AnimalType, state: AnimalState): HitBoxes {
+  if (type.spec.bird) return BIRD_HIT
+
+  const bodyW = type.spec.bodyW ?? 24
+  const bodyRight = 32 + bodyW / 2
+  const bodyLeft = 32 - bodyW / 2
+  const neckX = bodyRight - 6
+  const headY = 30 - HEAD_LIFT[state] * 20 // matches drawQuadruped()
+
+  return {
+    head: uvBox(neckX + 1, headY - 3, Math.min(neckX + 15, SPRITE_W), headY + 11),
+    heart: uvBox(32, 26, bodyRight - 2, 33),
+    body: uvBox(bodyLeft - 2, Math.min(headY - 3, 20), bodyRight + 9, 44),
+  }
 }
 
 /**

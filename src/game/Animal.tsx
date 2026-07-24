@@ -6,6 +6,7 @@ import {
   SCORING,
   animalKey,
   animalSource,
+  hitBoxesFor,
   regionAtUV,
   type AnimalType,
 } from '../config/animals'
@@ -124,7 +125,9 @@ export default function Animal({
     if (!alive.current || dying.current) return
     if (!useGameStore.getState().shoot()) return // out of ammo
 
-    const region = e.uv ? regionAtUV(type.hit, e.uv.x, e.uv.y) : null
+    const region = e.uv
+      ? regionAtUV(hitBoxesFor(type, displayState), e.uv.x, e.uv.y)
+      : null
     if (!region) return // clipped the sprite plane but missed the body
 
     const points = SCORING[region]
