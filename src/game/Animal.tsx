@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import type { Group } from 'three'
 import { useGameStore, type AnimalResult, type ShotRecord } from '../state/gameStore'
@@ -58,6 +58,10 @@ export default function Animal({
   const deadT = useRef(0)
   const resolved = useRef(false)
   const fleeDir = useRef<{ x: number; z: number } | null>(null)
+  // sprites face right; mirror when travelling left so they don't move backward
+  const [flipX, setFlipX] = useState(() =>
+    inst.crossVel ? inst.crossVel.x < 0 : false,
+  )
 
   // birds drifting across during the calm phase show the flying (run) animation
   const flyingCalm = herdPhase === 'calm' && !!inst.crossVel
@@ -110,6 +114,7 @@ export default function Animal({
         const lateral = x.current * 0.15 + (inst.offset - 3) * 0.4
         const len = Math.hypot(lateral, 1)
         fleeDir.current = { x: lateral / len, z: -1 / len }
+        setFlipX(fleeDir.current.x < 0)
       }
       const speed = type.fleeSpeed * inst.fleeMult
       x.current += fleeDir.current.x * speed * delta
@@ -187,6 +192,7 @@ export default function Animal({
         fps={fps}
         size={type.size}
         offset={inst.offset}
+        flipX={flipX}
         onPointerDown={handleShot}
       />
     </group>

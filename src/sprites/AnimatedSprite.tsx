@@ -17,6 +17,8 @@ export default function AnimatedSprite({
   onPointerDown,
   /** starting frame offset so many copies don't animate in lockstep */
   offset = 0,
+  /** mirror horizontally (for sprites travelling left) */
+  flipX = false,
 }: {
   frames: Texture[] | null
   fps?: number
@@ -25,6 +27,7 @@ export default function AnimatedSprite({
   opacity?: number
   onPointerDown?: (e: ThreeEvent<PointerEvent>) => void
   offset?: number
+  flipX?: boolean
 }) {
   const mat = useRef<MeshBasicMaterial>(null)
   const idx = useRef(Math.floor(offset))
@@ -47,7 +50,9 @@ export default function AnimatedSprite({
 
   return (
     <Billboard>
-      <mesh onPointerDown={onPointerDown}>
+      {/* scale.x = -1 mirrors both the texture and its UVs, so hit regions
+          stay consistent with the visible (flipped) sprite */}
+      <mesh onPointerDown={onPointerDown} scale={[flipX ? -1 : 1, 1, 1]}>
         <planeGeometry args={size} />
         <meshBasicMaterial
           ref={mat}
