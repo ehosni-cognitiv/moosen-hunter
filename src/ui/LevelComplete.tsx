@@ -102,7 +102,11 @@ export default function LevelComplete() {
               {r.killed && r.bonus > 0 && (
                 <li>
                   <span className="dot dot--bonus" />
-                  {r.typeId === 'moosen' ? 'Moosen bonus' : 'Kill bonus'}
+                  {r.typeId === 'moosen'
+                    ? 'Moosen bonus'
+                    : r.typeId === 'golden'
+                      ? 'Golden headshot bonus'
+                      : 'Kill bonus'}
                   <b className="pos">+{r.bonus}</b>
                 </li>
               )}

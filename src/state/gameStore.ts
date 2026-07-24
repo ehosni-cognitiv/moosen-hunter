@@ -45,6 +45,8 @@ interface GameState {
   levelHits: number
   /** accuracy bonus awarded at the end of the level (for the tally screen) */
   levelAccuracyBonus: number
+  /** the one level (after level 2) the golden rabbit appears in, this game */
+  goldenLevel: number
   leaderboard: ScoreEntry[]
 
   startGame: () => void
@@ -82,10 +84,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   levelShots: 0,
   levelHits: 0,
   levelAccuracyBonus: 0,
+  goldenLevel: 0,
   leaderboard: loadLeaderboard(),
 
   startGame: () => {
-    set({ totalScore: 0 })
+    // The golden rabbit appears exactly once per game, in a random level after
+    // level 2 (guaranteed to show up in that one level).
+    const goldenLevel = 3 + Math.floor(Math.random() * (TOTAL_LEVELS - 2))
+    set({ totalScore: 0, goldenLevel })
     get().startLevel(1)
   },
 

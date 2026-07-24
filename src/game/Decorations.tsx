@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useFrames } from '../sprites/useFrames'
-import { makeGrassFrames, makeTreeFrames } from '../sprites/placeholders'
+import { makeBushFrames, makeGrassFrames, makeTreeFrames } from '../sprites/placeholders'
 import AnimatedSprite from '../sprites/AnimatedSprite'
 import { useHeightField } from './TerrainContext'
 import type { LevelConfig } from '../config/levels'
@@ -37,6 +37,10 @@ export default function Decorations({ cfg }: { cfg: LevelConfig }) {
     kind: 'proc',
     make: () => makeGrassFrames(pal.low),
   })
+  const bushFrames = useFrames(`bush-L${cfg.level}`, {
+    kind: 'proc',
+    make: () => makeBushFrames(pal.mid, pal.high),
+  })
 
   const trees = useMemo<Item[]>(() => {
     const r = rng(cfg.terrain.seed)
@@ -61,6 +65,19 @@ export default function Decorations({ cfg }: { cfg: LevelConfig }) {
     }))
   }, [cfg])
 
+  const bushes = useMemo<Item[]>(() => {
+    const r = rng(cfg.terrain.seed + 321)
+    return Array.from({ length: cfg.bushes }, () => {
+      const scale = 0.85 + r() * 0.6
+      return {
+        x: (r() * 2 - 1) * 37,
+        z: -37 + r() * 48,
+        size: [2.4 * scale, 1.8 * scale] as [number, number],
+        offset: r() * 3,
+      }
+    })
+  }, [cfg])
+
   return (
     <group>
       {trees.map((t, i) => (
@@ -77,6 +94,14 @@ export default function Decorations({ cfg }: { cfg: LevelConfig }) {
           position={[g.x, hf.heightAt(g.x, g.z) + g.size[1] / 2, g.z]}
         >
           <AnimatedSprite frames={grassFrames} fps={4} size={g.size} offset={g.offset} />
+        </group>
+      ))}
+      {bushes.map((bsh, i) => (
+        <group
+          key={`b${i}`}
+          position={[bsh.x, hf.heightAt(bsh.x, bsh.z) + bsh.size[1] / 2, bsh.z]}
+        >
+          <AnimatedSprite frames={bushFrames} fps={3} size={bsh.size} offset={bsh.offset} />
         </group>
       ))}
     </group>

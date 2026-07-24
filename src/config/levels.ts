@@ -25,6 +25,7 @@ export interface LevelConfig {
   /** scenery billboard counts */
   trees: number
   grass: number
+  bushes: number
 }
 
 interface Biome {
@@ -69,6 +70,7 @@ function spawnsFor(level: number): SpawnWeight[] {
     { type: 'fox', weight: level >= 4 ? 2 : 0 },
     { type: 'rabbit', weight: level >= 2 ? 3 : 0 },
     { type: 'grouse', weight: level >= 5 ? 2 + Math.round(t * 2) : 0 },
+    { type: 'mallard', weight: 3 + Math.round(t * 2) }, // flying game, all levels
     // park rangers (avoid!) start showing up early and get more common
     { type: 'ranger', weight: level >= 2 ? 2 + Math.round(t * 3) : 0 },
   ].filter((s) => s.weight > 0)
@@ -92,7 +94,8 @@ export const LEVELS: LevelConfig[] = BIOMES.map((b, i) => {
       palette: b.palette,
     },
     trees: b.trees,
-    grass: b.grass,
+    grass: Math.round(b.grass * 1.35), // a bit more grass
+    bushes: Math.round(b.trees * 0.7) + 3, // occasional bushes
   }
 })
 

@@ -8,8 +8,11 @@
  */
 
 import masonUrl from '../assets/mason.png'
+import mahirUrl from '../assets/mahir.png'
+import lanceUrl from '../assets/lance.png'
 
 export type AnimalState = 'idle' | 'alert' | 'run'
+export type FaceId = 'mason' | 'mahir' | 'lance'
 
 export interface CritterSpec {
   body: string
@@ -25,6 +28,10 @@ export interface CritterSpec {
   humanFace?: boolean
   /** draw an upright human figure (park ranger) instead of a quadruped */
   human?: boolean
+  /** which face image to blit for humanFace/human specs (default 'mason') */
+  faceId?: FaceId
+  /** horizontal scale for the face (>1 = wider head); default 1 */
+  headScale?: number
 }
 
 // Animal sprite *logical* dimensions. Exported so hit-region math in
@@ -64,22 +71,28 @@ function px(
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
 }
 
-// Resolution the photo is downsampled to for the pixelated look. Higher = more
+// Resolution each photo is downsampled to for the pixelated look. Higher = more
 // facial detail (but chunkier only up to the on-screen head size).
 const FACE_W = 34
 const FACE_H = 40
-let faceCanvas: HTMLCanvasElement | null = null
-let facePromise: Promise<void> | null = null
+const FACE_URLS: Record<FaceId, string> = {
+  mason: masonUrl,
+  mahir: mahirUrl,
+  lance: lanceUrl,
+}
+const faceCanvases: Partial<Record<FaceId, HTMLCanvasElement>> = {}
+const facePromises: Partial<Record<FaceId, Promise<void>>> = {}
 
 /**
- * Loads src/assets/mason.png and bakes a pixelated version of it into a canvas,
- * once. Because it's loaded (not hard-coded), swapping the PNG updates the
- * Moosen/ranger face with no code changes. Awaited before face sprites build
- * (see loadFrames), so the face is always ready when drawn.
+ * Loads a face PNG from src/assets and bakes a pixelated version into a canvas,
+ * once per face. Because faces are loaded (not hard-coded), swapping the PNG
+ * updates the appearance with no code changes. Awaited before face sprites
+ * build (see loadFrames), so the face is always ready when drawn.
  */
-export function ensureFace(): Promise<void> {
-  if (facePromise) return facePromise
-  facePromise = new Promise<void>((resolve) => {
+export function ensureFace(id: FaceId = 'mason'): Promise<void> {
+  const existing = facePromises[id]
+  if (existing) return existing
+  const promise = new Promise<void>((resolve) => {
     const img = new Image()
     img.onload = () => {
       const c = newCanvas(FACE_W, FACE_H)
@@ -89,19 +102,20 @@ export function ensureFace(): Promise<void> {
       const dw = img.width * s
       const dh = img.height * s
       g.drawImage(img, (FACE_W - dw) / 2, (FACE_H - dh) / 2, dw, dh)
-      faceCanvas = c
+      faceCanvases[id] = c
       resolve()
     }
     img.onerror = () => resolve() // fall back to a plain head if it can't load
-    img.src = masonUrl
+    img.src = FACE_URLS[id]
   })
-  return facePromise
+  facePromises[id] = promise
+  return promise
 }
 
-/** The pixelated face canvas, shared by the Moosen and ranger, or null if the
- *  image hasn't loaded yet (ensureFace() gates that for sprite building). */
-function getFace(): HTMLCanvasElement | null {
-  return faceCanvas
+/** The pixelated face canvas for `id`, or null if its image hasn't loaded yet
+ *  (ensureFace() gates that for sprite building). */
+function getFace(id: FaceId): HTMLCanvasElement | null {
+  return faceCanvases[id] ?? null
 }
 
 /** One quadruped frame. headLift 0=grazing, 1=head high; legPhase animates gait. */
@@ -140,10 +154,16 @@ function drawQuadruped(
   px(ctx, neckX, headY + 4, 6, bodyTop + 2 - (headY + 4) + 8, spec.body) // neck
 
   if (spec.humanFace) {
+    // long ears (e.g. the golden rabbit) poke up behind the face
+    if (spec.ears === 'long') {
+      px(ctx, neckX + 3, headY - 12, 2, 11, spec.body)
+      px(ctx, neckX + 8, headY - 12, 2, 11, spec.body)
+    }
     // blit the pixelated photo face into the head box
     ctx.imageSmoothingEnabled = false
-    const face = getFace()
-    if (face) ctx.drawImage(face, neckX, headY - 3, 14, 15)
+    const face = getFace(spec.faceId ?? 'mason')
+    const fw = 14 * (spec.headScale ?? 1)
+    if (face) ctx.drawImage(face, neckX + 7 - fw / 2, headY - 3, fw, 15)
     else px(ctx, neckX + 1, headY, 12, 12, '#dcb08a') // fallback while loading
   } else {
     px(ctx, neckX + 2, headY, 12, 10, spec.head) // head block
@@ -174,18 +194,21 @@ function drawQuadruped(
   return c
 }
 
-/** A simple flying bird frame. wing 0..1 controls flap. */
+/** A chunky flying bird (duck) frame. wing 0..1 controls flap. */
 function drawBird(spec: CritterSpec, wing: number): HTMLCanvasElement {
   const { c, ctx } = animalCanvas()
   const cx = 30
   const cy = 24
-  px(ctx, cx - 8, cy - 2, 16, 6, spec.body) // body
-  px(ctx, cx + 7, cy - 3, 6, 5, spec.head) // head
-  px(ctx, cx + 12, cy - 1, 3, 2, '#ffcf4d') // beak
-  px(ctx, cx + 9, cy - 2, 2, 2, '#0d0d10') // eye
-  const wy = cy - 2 - wing * 8
-  px(ctx, cx - 6, wy, 10, 4, spec.belly) // near wing
-  px(ctx, cx - 2, cy + 2 + wing * 6, 10, 4, spec.belly) // far wing
+  px(ctx, cx - 10, cy - 3, 19, 8, spec.body) // body
+  px(ctx, cx - 10, cy + 3, 19, 2, spec.belly) // pale underside
+  px(ctx, cx - 14, cy - 2, 5, 4, spec.body) // tail
+  px(ctx, cx + 7, cy - 6, 7, 7, spec.head) // head
+  px(ctx, cx + 13, cy - 3, 4, 2, '#ffcf4d') // beak
+  px(ctx, cx + 9, cy - 4, 2, 2, '#0d0d10') // eye
+  // wings flap but stay close to the body (body-coloured, so it reads as a bird)
+  const wy = cy - 3 - wing * 4
+  px(ctx, cx - 6, wy, 13, 4, spec.body) // upper wing
+  px(ctx, cx - 4, cy + 4 + wing * 3, 12, 3, spec.body) // lower wing
   return c
 }
 
@@ -204,10 +227,11 @@ function drawHuman(spec: CritterSpec, legPhase: number): HTMLCanvasElement {
   // arms
   px(ctx, cx - 9, 23, 3, 9, spec.body)
   px(ctx, cx + 6, 23, 3, 9, spec.body)
-  // head: the ranger face (same pixelated photo as the Moosen)
+  // head: the ranger's face
   ctx.imageSmoothingEnabled = false
-  const face = getFace()
-  if (face) ctx.drawImage(face, cx - 8, 6, 16, 17)
+  const face = getFace(spec.faceId ?? 'mason')
+  const fw = 16 * (spec.headScale ?? 1)
+  if (face) ctx.drawImage(face, cx - fw / 2, 6, fw, 17)
   else px(ctx, cx - 6, 8, 12, 13, '#dcb08a') // fallback while loading
 
   return c
@@ -285,6 +309,32 @@ export function makeGrassFrames(color = '#4f7a3a'): HTMLCanvasElement[] {
       ctx.closePath()
       ctx.fill()
     }
+    frames.push(c)
+  }
+  return frames
+}
+
+/** A small rounded shrub; the top tuft sways a little across frames. */
+export function makeBushFrames(
+  color: string,
+  color2: string,
+): HTMLCanvasElement[] {
+  const W = 32
+  const H = 24
+  const frames: HTMLCanvasElement[] = []
+  for (const sway of [-1, 1, 0]) {
+    const c = newCanvas(W, H)
+    const ctx = c.getContext('2d')!
+    const blob = (bx: number, by: number, bw: number, bh: number, col: string) => {
+      ctx.fillStyle = col
+      ctx.fillRect(Math.round(bx), Math.round(by), bw, bh)
+    }
+    // rounded mound built from stacked blocks
+    blob(5, 16, 22, 7, color) // wide base
+    blob(3, 13, 26, 5, color)
+    blob(7, 9, 18, 5, color)
+    blob(6 + sway, 6, 9, 4, color2) // left tuft (sways)
+    blob(16 - sway, 5, 9, 5, color2) // right tuft (sways)
     frames.push(c)
   }
   return frames

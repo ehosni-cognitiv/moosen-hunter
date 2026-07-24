@@ -23,6 +23,10 @@ export interface AnimalInstance {
   fleeMult: number
   /** animation offset so the herd doesn't move in lockstep */
   offset: number
+  /** per-instance height off the ground (for airborne birds) */
+  flyOverride?: number
+  /** if set, drifts at this velocity during the calm phase (flying across) */
+  crossVel?: { x: number; z: number }
 }
 
 const BOUND = 38
@@ -46,7 +50,7 @@ export default function Animal({
   const group = useRef<Group>(null)
   const x = useRef(inst.x)
   const z = useRef(inst.z)
-  const fly = useRef(type.fly)
+  const fly = useRef(inst.flyOverride ?? type.fly)
   const alive = useRef(true)
   const health = useRef(type.health)
   const shots = useRef<ShotRecord[]>([])
@@ -55,11 +59,14 @@ export default function Animal({
   const resolved = useRef(false)
   const fleeDir = useRef<{ x: number; z: number } | null>(null)
 
-  const displayState = dying.current || herdPhase === 'flee'
-    ? 'run'
-    : herdPhase === 'alert'
-      ? 'alert'
-      : 'idle'
+  // birds drifting across during the calm phase show the flying (run) animation
+  const flyingCalm = herdPhase === 'calm' && !!inst.crossVel
+  const displayState =
+    dying.current || herdPhase === 'flee' || flyingCalm
+      ? 'run'
+      : herdPhase === 'alert'
+        ? 'alert'
+        : 'idle'
   const frames =
     displayState === 'run' ? runF : displayState === 'alert' ? alertF : idleF
   const fps =
@@ -95,8 +102,10 @@ export default function Animal({
       return
     }
 
+    const phase = useGameStore.getState().herdPhase
+
     // flee: run away from the hunter (toward -z) with lateral spread
-    if (alive.current && useGameStore.getState().herdPhase === 'flee') {
+    if (alive.current && phase === 'flee') {
       if (!fleeDir.current) {
         const lateral = x.current * 0.15 + (inst.offset - 3) * 0.4
         const len = Math.hypot(lateral, 1)
@@ -105,10 +114,18 @@ export default function Animal({
       const speed = type.fleeSpeed * inst.fleeMult
       x.current += fleeDir.current.x * speed * delta
       z.current += fleeDir.current.z * speed * delta
-      if (type.fly > 0) fly.current += delta * 1.5 // birds climb
+      if (type.spec.bird) fly.current += delta * 3 // birds take off / climb
 
       if (Math.abs(x.current) > BOUND || z.current < -BOUND || z.current > 22) {
         resolve(false) // escaped
+        return
+      }
+    } else if (alive.current && phase === 'calm' && inst.crossVel) {
+      // peacefully flying across the screen before anything is spooked
+      x.current += inst.crossVel.x * delta
+      z.current += inst.crossVel.z * delta
+      if (Math.abs(x.current) > BOUND || z.current < -BOUND || z.current > 22) {
+        resolve(false) // drifted off the map
         return
       }
     }

@@ -46,7 +46,16 @@ export interface AnimalType {
   /** if set, this is an "avoid" target (park ranger): hitting it subtracts
    *  this many points and downs it. Overrides the normal scoring. */
   penalty?: number
+  /** the rare golden rabbit — special spawn/behaviour/scoring (see GoldenRabbit) */
+  golden?: boolean
+  /** some instances may spawn already airborne, drifting peacefully across the
+   *  screen during the calm phase (see Scene spawner). Birds only. */
+  canFlyAcross?: boolean
 }
+
+/** Golden rabbit scoring: a kill is worth `points`, +`headshotBonus` if it was
+ *  a headshot. One hit kills it regardless of location. */
+export const GOLDEN = { points: 1000, headshotBonus: 2000 }
 
 // Combat presets.
 //  NORMAL: head/heart are one-shot kills; 3 body shots also kill.
@@ -135,17 +144,29 @@ export const ANIMALS: Record<string, AnimalType> = {
     name: 'Grouse',
     spec: { body: '#7a5a3a', belly: '#a8865a', head: '#6b4a2b', leg: '#6b4a2b', bodyW: 16, bird: true },
     size: [1.5, 1.1],
-    fly: 2.2,
+    fly: 0, // sits on the ground, takes off when spooked
     speed: 0.3,
     fleeSpeed: 9.5,
     fps: { idle: 4, alert: 6, run: 14 },
     ...NORMAL,
   },
+  mallard: {
+    id: 'mallard',
+    name: 'Mallard',
+    spec: { body: '#6b5233', belly: '#b59a6a', head: '#2f7d3b', leg: '#d0a020', bodyW: 16, bird: true },
+    size: [1.7, 1.2],
+    fly: 0, // grounded by default; some spawn airborne (see Scene)
+    speed: 0.3,
+    fleeSpeed: 9,
+    fps: { idle: 5, alert: 7, run: 16 },
+    ...NORMAL,
+    canFlyAcross: true,
+  },
   // Park ranger — a human with a Moosen-like face (hat + mustache). DON'T shoot!
   ranger: {
     id: 'ranger',
     name: 'Park Ranger',
-    spec: { body: '#3f5d3a', belly: '#2e2a20', head: '#dcb08a', leg: '#4a3a2a', bodyW: 12, human: true },
+    spec: { body: '#3f5d3a', belly: '#2e2a20', head: '#dcb08a', leg: '#4a3a2a', bodyW: 12, human: true, faceId: 'lance', headScale: 1.45 },
     size: [2.0, 2.7],
     fly: 0,
     speed: 0.45,
@@ -155,6 +176,21 @@ export const ANIMALS: Record<string, AnimalType> = {
     damage: { head: 20, heart: 20, body: 20 },
     killBonus: 0,
     penalty: 300,
+  },
+  // The rare golden rabbit — Mahir's face, appears once per game (see Scene).
+  golden: {
+    id: 'golden',
+    name: 'Golden Rabbit',
+    spec: { body: '#f2c438', belly: '#ffe89a', head: '#f2c438', leg: '#c99a1e', bodyW: 12, ears: 'long', tail: 'stub', humanFace: true, faceId: 'mahir', headScale: 1.45 },
+    size: [1.6, 1.6],
+    fly: 0,
+    speed: 0,
+    fleeSpeed: 0,
+    fps: { idle: 10, alert: 10, run: 18 },
+    health: 1,
+    damage: { head: 1, heart: 1, body: 1 },
+    killBonus: 0,
+    golden: true,
   },
 }
 
@@ -217,11 +253,12 @@ export function hitBoxesFor(type: AnimalType, state: AnimalState): HitBoxes {
  */
 export function animalSource(type: AnimalType, state: AnimalState): SpriteSource {
   const usesFace = type.spec.humanFace || type.spec.human
+  const faceId = type.spec.faceId ?? 'mason'
   return {
     kind: 'proc',
     make: () => makeAnimalFrames(type.spec, state),
-    // face sprites must wait for mason.png to load before rasterizing
-    ...(usesFace ? { ready: ensureFace } : {}),
+    // face sprites must wait for their face image to load before rasterizing
+    ...(usesFace ? { ready: () => ensureFace(faceId) } : {}),
   }
 }
 
@@ -229,10 +266,12 @@ export function animalKey(type: AnimalType, state: AnimalState): string {
   return `${type.id}-${state}`
 }
 
-// Begin loading the face image as soon as this module is imported, so it's
+// Begin loading the face images as soon as this module is imported, so they're
 // ready for the first sprites (and the tally diagram, which builds frames
 // synchronously).
-void ensureFace()
+void ensureFace('mason')
+void ensureFace('mahir')
+void ensureFace('lance')
 
 /** Which region (if any) a UV hit falls in; head > heart > body priority. */
 export function regionAtUV(hit: HitBoxes, u: number, v: number): HitRegion | null {
