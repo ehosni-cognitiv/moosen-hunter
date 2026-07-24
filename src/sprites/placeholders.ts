@@ -7,6 +7,8 @@
  * NEAREST filtering, so it reads as chunky pixel art. Animals face RIGHT.
  */
 
+import masonUrl from '../assets/mason.png'
+
 export type AnimalState = 'idle' | 'alert' | 'run'
 
 export interface CritterSpec {
@@ -62,60 +64,44 @@ function px(
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
 }
 
+// Resolution the photo is downsampled to for the pixelated look. Higher = more
+// facial detail (but chunkier only up to the on-screen head size).
+const FACE_W = 34
+const FACE_H = 40
 let faceCanvas: HTMLCanvasElement | null = null
+let facePromise: Promise<void> | null = null
 
 /**
- * The single pixel-art human face, shared by the Moosen AND the park ranger.
- * They're identical from the neck up on purpose — you have to read the body
- * (moose vs. upright human) to tell the trophy from the ranger.
+ * Loads src/assets/mason.png and bakes a pixelated version of it into a canvas,
+ * once. Because it's loaded (not hard-coded), swapping the PNG updates the
+ * Moosen/ranger face with no code changes. Awaited before face sprites build
+ * (see loadFrames), so the face is always ready when drawn.
  */
-function getFace(): HTMLCanvasElement {
-  if (faceCanvas) return faceCanvas
+export function ensureFace(): Promise<void> {
+  if (facePromise) return facePromise
+  facePromise = new Promise<void>((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const c = newCanvas(FACE_W, FACE_H)
+      const g = c.getContext('2d')!
+      g.imageSmoothingEnabled = true // box-filter down to the low-res grid
+      const s = Math.min(FACE_W / img.width, FACE_H / img.height)
+      const dw = img.width * s
+      const dh = img.height * s
+      g.drawImage(img, (FACE_W - dw) / 2, (FACE_H - dh) / 2, dw, dh)
+      faceCanvas = c
+      resolve()
+    }
+    img.onerror = () => resolve() // fall back to a plain head if it can't load
+    img.src = masonUrl
+  })
+  return facePromise
+}
 
-  const c = newCanvas(26, 24)
-  const g = c.getContext('2d')!
-  const p = (x: number, y: number, w: number, h: number, color: string) => {
-    g.fillStyle = color
-    g.fillRect(x, y, w, h)
-  }
-
-  const skin = '#dcb08a'
-  const skinS = '#c1936f'
-  const brow = '#33251a'
-  const eye = '#20160f'
-  const white = '#eae4da'
-  const mouth = '#8f5346'
-  const hair = '#3b2b1f'
-
-  p(5, 4, 16, 17, skin)
-  p(6, 19, 14, 2, skinS) // jawline shadow
-  p(7, 15, 3, 3, skinS) // cheek shadow
-  p(16, 15, 3, 3, skinS)
-  p(4, 11, 1, 4, skin) // ears
-  p(21, 11, 1, 4, skin)
-  p(7, 9, 4, 1, brow) // brows
-  p(15, 9, 4, 1, brow)
-  p(7, 11, 4, 2, white) // eyes
-  p(15, 11, 4, 2, white)
-  p(8, 11, 2, 2, eye)
-  p(16, 11, 2, 2, eye)
-  p(12, 12, 2, 4, skinS) // nose
-  p(11, 16, 4, 1, skin)
-  p(9, 19, 8, 1, mouth) // slight smile
-  p(8, 18, 1, 1, mouth)
-  p(17, 18, 1, 1, mouth)
-  // short dark hair, slightly receding
-  p(5, 2, 16, 5, hair)
-  p(7, 2, 12, 1, hair)
-  p(5, 7, 2, 5, hair)
-  p(19, 7, 2, 5, hair)
-  p(8, 6, 2, 1, skin) // widow's-peak notches
-  p(16, 6, 2, 1, skin)
-  p(6, 22, 14, 2, '#141417') // collar
-  p(11, 22, 4, 1, '#8a8f96')
-
-  faceCanvas = c
-  return c
+/** The pixelated face canvas, shared by the Moosen and ranger, or null if the
+ *  image hasn't loaded yet (ensureFace() gates that for sprite building). */
+function getFace(): HTMLCanvasElement | null {
+  return faceCanvas
 }
 
 /** One quadruped frame. headLift 0=grazing, 1=head high; legPhase animates gait. */
@@ -154,9 +140,11 @@ function drawQuadruped(
   px(ctx, neckX, headY + 4, 6, bodyTop + 2 - (headY + 4) + 8, spec.body) // neck
 
   if (spec.humanFace) {
-    // blit the (higher-res) human face into the head box
+    // blit the pixelated photo face into the head box
     ctx.imageSmoothingEnabled = false
-    ctx.drawImage(getFace(), neckX + 1, headY - 1, 13, 12)
+    const face = getFace()
+    if (face) ctx.drawImage(face, neckX, headY - 3, 14, 15)
+    else px(ctx, neckX + 1, headY, 12, 12, '#dcb08a') // fallback while loading
   } else {
     px(ctx, neckX + 2, headY, 12, 10, spec.head) // head block
     px(ctx, neckX + 12, headY + 3, 3, 4, spec.head) // snout
@@ -216,9 +204,11 @@ function drawHuman(spec: CritterSpec, legPhase: number): HTMLCanvasElement {
   // arms
   px(ctx, cx - 9, 23, 3, 9, spec.body)
   px(ctx, cx + 6, 23, 3, 9, spec.body)
-  // head: the ranger face
+  // head: the ranger face (same pixelated photo as the Moosen)
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(getFace(), cx - 7, 8, 13, 13)
+  const face = getFace()
+  if (face) ctx.drawImage(face, cx - 8, 6, 16, 17)
+  else px(ctx, cx - 6, 8, 12, 13, '#dcb08a') // fallback while loading
 
   return c
 }

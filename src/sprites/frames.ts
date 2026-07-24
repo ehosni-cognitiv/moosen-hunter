@@ -11,7 +11,7 @@ import { CanvasTexture, NearestFilter, SRGBColorSpace, type Texture } from 'thre
 import { parseGIF, decompressFrames } from 'gifuct-js'
 
 export type SpriteSource =
-  | { kind: 'proc'; make: () => HTMLCanvasElement[] }
+  | { kind: 'proc'; make: () => HTMLCanvasElement[]; ready?: () => Promise<void> }
   | { kind: 'gif'; url: string }
   | { kind: 'sheet'; url: string; cols: number; rows: number; count?: number }
 
@@ -82,7 +82,10 @@ async function loadSheetFrames(
 }
 
 export async function loadFrames(src: SpriteSource): Promise<Texture[]> {
-  if (src.kind === 'proc') return src.make().map(toTexture)
+  if (src.kind === 'proc') {
+    if (src.ready) await src.ready() // e.g. wait for the face image to load
+    return src.make().map(toTexture)
+  }
   if (src.kind === 'gif') return loadGifFrames(src.url)
   return loadSheetFrames(src.url, src.cols, src.rows, src.count)
 }

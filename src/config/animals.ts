@@ -1,4 +1,5 @@
 import {
+  ensureFace,
   makeAnimalFrames,
   SPRITE_W,
   SPRITE_H,
@@ -215,12 +216,23 @@ export function hitBoxesFor(type: AnimalType, state: AnimalState): HitBoxes {
  * or a sprite sheet — nothing else in the game needs to change.
  */
 export function animalSource(type: AnimalType, state: AnimalState): SpriteSource {
-  return { kind: 'proc', make: () => makeAnimalFrames(type.spec, state) }
+  const usesFace = type.spec.humanFace || type.spec.human
+  return {
+    kind: 'proc',
+    make: () => makeAnimalFrames(type.spec, state),
+    // face sprites must wait for mason.png to load before rasterizing
+    ...(usesFace ? { ready: ensureFace } : {}),
+  }
 }
 
 export function animalKey(type: AnimalType, state: AnimalState): string {
   return `${type.id}-${state}`
 }
+
+// Begin loading the face image as soon as this module is imported, so it's
+// ready for the first sprites (and the tally diagram, which builds frames
+// synchronously).
+void ensureFace()
 
 /** Which region (if any) a UV hit falls in; head > heart > body priority. */
 export function regionAtUV(hit: HitBoxes, u: number, v: number): HitRegion | null {
