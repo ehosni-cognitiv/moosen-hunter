@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { TOTAL_LEVELS } from '../config/levels'
 import type { HitRegion } from '../config/animals'
+import type { AnimalState } from '../sprites/placeholders'
 import { loadLeaderboard, saveScore, type ScoreEntry } from './leaderboard'
 
 export type Phase = 'title' | 'playing' | 'levelComplete' | 'gameover' | 'leaderboard'
@@ -14,6 +15,8 @@ export interface ShotRecord {
   /** where on the sprite it landed, for the tally diagram (v=1 top) */
   u: number
   v: number
+  /** the animation pose when hit, so the tally can remap the marker */
+  state: AnimalState
 }
 
 export interface AnimalResult {
@@ -37,6 +40,11 @@ interface GameState {
   reloading: boolean
   herdPhase: HerdPhase
   levelResults: AnimalResult[]
+  /** shots fired / shots that hit an animal this level (for accuracy) */
+  levelShots: number
+  levelHits: number
+  /** accuracy bonus awarded at the end of the level (for the tally screen) */
+  levelAccuracyBonus: number
   leaderboard: ScoreEntry[]
 
   startGame: () => void
@@ -56,7 +64,11 @@ interface GameState {
   alertHerd: () => void
   addScore: (points: number) => void
   addResult: (result: AnimalResult) => void
+  /** record a shot that landed on an animal (for accuracy) */
+  recordHit: () => void
 }
+
+const ACCURACY_BONUS_MAX = 200
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'title',
@@ -67,6 +79,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   reloading: false,
   herdPhase: 'calm',
   levelResults: [],
+  levelShots: 0,
+  levelHits: 0,
+  levelAccuracyBonus: 0,
   leaderboard: loadLeaderboard(),
 
   startGame: () => {
@@ -83,12 +98,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       reloading: false,
       herdPhase: 'calm',
       levelResults: [],
+      levelShots: 0,
+      levelHits: 0,
+      levelAccuracyBonus: 0,
     })
   },
 
   endLevel: () => {
     if (get().phase !== 'playing') return
-    set({ phase: 'levelComplete' })
+    const { levelShots, levelHits } = get()
+    const accuracy = levelShots > 0 ? levelHits / levelShots : 0
+    const bonus = Math.round(accuracy * ACCURACY_BONUS_MAX)
+    set((s) => ({
+      totalScore: s.totalScore + bonus,
+      levelAccuracyBonus: bonus,
+      phase: 'levelComplete',
+    }))
   },
 
   nextLevel: () => {
@@ -123,6 +148,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!s.reloading) s.reload()
       return false
     }
+    set((st) => ({ levelShots: st.levelShots + 1 }))
     s.alertHerd()
     return true
   },
@@ -153,4 +179,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addResult: (result) =>
     set((s) => ({ levelResults: [...s.levelResults, result] })),
+
+  recordHit: () => set((s) => ({ levelHits: s.levelHits + 1 })),
 }))

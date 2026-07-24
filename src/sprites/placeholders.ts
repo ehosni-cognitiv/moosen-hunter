@@ -19,20 +19,35 @@ export interface CritterSpec {
   ears?: 'none' | 'long' | 'short'
   tail?: 'none' | 'bushy' | 'stub'
   bird?: boolean
+  /** draw a (human) face as the head instead of an animal muzzle (the Moosen) */
+  humanFace?: boolean
+  /** draw an upright human figure (park ranger) instead of a quadruped */
+  human?: boolean
 }
 
-// Animal sprite canvas dimensions. Exported so hit-region math in animals.ts
-// stays in sync with how the critters are actually drawn here.
+// Animal sprite *logical* dimensions. Exported so hit-region math in
+// animals.ts stays in sync (UV is normalized, so the logical size is what
+// matters). Frames are rasterized at SPRITE_SCALE× for extra pixel detail.
 export const SPRITE_W = 64
 export const SPRITE_H = 48
 const AW = SPRITE_W
 const AH = SPRITE_H
+const SPRITE_SCALE = 2
 
 function newCanvas(w: number, h: number) {
   const c = document.createElement('canvas')
   c.width = w
   c.height = h
   return c
+}
+
+/** A 2×-resolution canvas with the drawing context scaled to logical coords. */
+function animalCanvas() {
+  const c = newCanvas(AW * SPRITE_SCALE, AH * SPRITE_SCALE)
+  const ctx = c.getContext('2d')!
+  ctx.imageSmoothingEnabled = false
+  ctx.scale(SPRITE_SCALE, SPRITE_SCALE)
+  return { c, ctx }
 }
 
 function px(
@@ -47,14 +62,69 @@ function px(
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
 }
 
+let faceCanvas: HTMLCanvasElement | null = null
+
+/**
+ * The single pixel-art human face, shared by the Moosen AND the park ranger.
+ * They're identical from the neck up on purpose — you have to read the body
+ * (moose vs. upright human) to tell the trophy from the ranger.
+ */
+function getFace(): HTMLCanvasElement {
+  if (faceCanvas) return faceCanvas
+
+  const c = newCanvas(26, 24)
+  const g = c.getContext('2d')!
+  const p = (x: number, y: number, w: number, h: number, color: string) => {
+    g.fillStyle = color
+    g.fillRect(x, y, w, h)
+  }
+
+  const skin = '#dcb08a'
+  const skinS = '#c1936f'
+  const brow = '#33251a'
+  const eye = '#20160f'
+  const white = '#eae4da'
+  const mouth = '#8f5346'
+  const hair = '#3b2b1f'
+
+  p(5, 4, 16, 17, skin)
+  p(6, 19, 14, 2, skinS) // jawline shadow
+  p(7, 15, 3, 3, skinS) // cheek shadow
+  p(16, 15, 3, 3, skinS)
+  p(4, 11, 1, 4, skin) // ears
+  p(21, 11, 1, 4, skin)
+  p(7, 9, 4, 1, brow) // brows
+  p(15, 9, 4, 1, brow)
+  p(7, 11, 4, 2, white) // eyes
+  p(15, 11, 4, 2, white)
+  p(8, 11, 2, 2, eye)
+  p(16, 11, 2, 2, eye)
+  p(12, 12, 2, 4, skinS) // nose
+  p(11, 16, 4, 1, skin)
+  p(9, 19, 8, 1, mouth) // slight smile
+  p(8, 18, 1, 1, mouth)
+  p(17, 18, 1, 1, mouth)
+  // short dark hair, slightly receding
+  p(5, 2, 16, 5, hair)
+  p(7, 2, 12, 1, hair)
+  p(5, 7, 2, 5, hair)
+  p(19, 7, 2, 5, hair)
+  p(8, 6, 2, 1, skin) // widow's-peak notches
+  p(16, 6, 2, 1, skin)
+  p(6, 22, 14, 2, '#141417') // collar
+  p(11, 22, 4, 1, '#8a8f96')
+
+  faceCanvas = c
+  return c
+}
+
 /** One quadruped frame. headLift 0=grazing, 1=head high; legPhase animates gait. */
 function drawQuadruped(
   spec: CritterSpec,
   headLift: number,
   legPhase: number,
 ): HTMLCanvasElement {
-  const c = newCanvas(AW, AH)
-  const ctx = c.getContext('2d')!
+  const { c, ctx } = animalCanvas()
   const baseline = 44
   const bodyBottom = 34
   const bodyTop = 22
@@ -82,16 +152,23 @@ function drawQuadruped(
   const headY = 30 - headLift * 20 // 30 (down) .. 10 (up)
   const neckX = bodyRight - 6
   px(ctx, neckX, headY + 4, 6, bodyTop + 2 - (headY + 4) + 8, spec.body) // neck
-  px(ctx, neckX + 2, headY, 12, 10, spec.head) // head block
-  px(ctx, neckX + 12, headY + 3, 3, 4, spec.head) // snout
-  px(ctx, neckX + 5, headY + 2, 2, 2, '#0d0d10') // eye
 
-  // ears
-  if (spec.ears === 'long') {
-    px(ctx, neckX + 3, headY - 8, 2, 8, spec.head)
-    px(ctx, neckX + 7, headY - 8, 2, 8, spec.head)
-  } else if (spec.ears === 'short') {
-    px(ctx, neckX + 3, headY - 3, 2, 3, spec.head)
+  if (spec.humanFace) {
+    // blit the (higher-res) human face into the head box
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(getFace(), neckX + 1, headY - 1, 13, 12)
+  } else {
+    px(ctx, neckX + 2, headY, 12, 10, spec.head) // head block
+    px(ctx, neckX + 12, headY + 3, 3, 4, spec.head) // snout
+    px(ctx, neckX + 5, headY + 2, 2, 2, '#0d0d10') // eye
+
+    // ears
+    if (spec.ears === 'long') {
+      px(ctx, neckX + 3, headY - 8, 2, 8, spec.head)
+      px(ctx, neckX + 7, headY - 8, 2, 8, spec.head)
+    } else if (spec.ears === 'short') {
+      px(ctx, neckX + 3, headY - 3, 2, 3, spec.head)
+    }
   }
 
   // antlers
@@ -111,8 +188,7 @@ function drawQuadruped(
 
 /** A simple flying bird frame. wing 0..1 controls flap. */
 function drawBird(spec: CritterSpec, wing: number): HTMLCanvasElement {
-  const c = newCanvas(AW, AH)
-  const ctx = c.getContext('2d')!
+  const { c, ctx } = animalCanvas()
   const cx = 30
   const cy = 24
   px(ctx, cx - 8, cy - 2, 16, 6, spec.body) // body
@@ -125,10 +201,39 @@ function drawBird(spec: CritterSpec, wing: number): HTMLCanvasElement {
   return c
 }
 
+/** An upright human figure (park ranger). legPhase animates a walk/run. */
+function drawHuman(spec: CritterSpec, legPhase: number): HTMLCanvasElement {
+  const { c, ctx } = animalCanvas()
+  const cx = 32
+  const swing = Math.sin(legPhase * Math.PI * 2) * 2.5
+
+  // legs (pants)
+  px(ctx, cx - 4 + swing, 34, 3, 10, spec.leg)
+  px(ctx, cx + 1 - swing, 34, 3, 10, spec.leg)
+  // torso (uniform) + belt
+  px(ctx, cx - 6, 22, 12, 13, spec.body)
+  px(ctx, cx - 6, 31, 12, 2, spec.belly)
+  // arms
+  px(ctx, cx - 9, 23, 3, 9, spec.body)
+  px(ctx, cx + 6, 23, 3, 9, spec.body)
+  // head: the ranger face
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(getFace(), cx - 7, 8, 13, 13)
+
+  return c
+}
+
 export function makeAnimalFrames(
   spec: CritterSpec,
   state: AnimalState,
 ): HTMLCanvasElement[] {
+  if (spec.human) {
+    // ranger: paces while idle, walks/runs when spooked
+    if (state === 'run')
+      return [drawHuman(spec, 0), drawHuman(spec, 0.25), drawHuman(spec, 0.5), drawHuman(spec, 0.75)]
+    if (state === 'idle') return [drawHuman(spec, 0), drawHuman(spec, 0.5)]
+    return [drawHuman(spec, 0)]
+  }
   if (spec.bird) {
     if (state === 'idle')
       return [drawBird(spec, 0.2), drawBird(spec, 0.4)]

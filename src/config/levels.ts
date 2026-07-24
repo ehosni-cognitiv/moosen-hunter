@@ -69,6 +69,8 @@ function spawnsFor(level: number): SpawnWeight[] {
     { type: 'fox', weight: level >= 4 ? 2 : 0 },
     { type: 'rabbit', weight: level >= 2 ? 3 : 0 },
     { type: 'grouse', weight: level >= 5 ? 2 + Math.round(t * 2) : 0 },
+    // park rangers (avoid!) start showing up early and get more common
+    { type: 'ranger', weight: level >= 2 ? 2 + Math.round(t * 3) : 0 },
   ].filter((s) => s.weight > 0)
 }
 

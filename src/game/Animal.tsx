@@ -48,7 +48,7 @@ export default function Animal({
   const z = useRef(inst.z)
   const fly = useRef(type.fly)
   const alive = useRef(true)
-  const hp = useRef(SCORING.bodyHP)
+  const health = useRef(type.health)
   const shots = useRef<ShotRecord[]>([])
   const dying = useRef(false)
   const deadT = useRef(0)
@@ -77,7 +77,7 @@ export default function Animal({
       name: type.name,
       shots: shots.current,
       killed,
-      bonus: killed ? SCORING.killBonus : 0,
+      bonus: killed ? type.killBonus : 0,
     })
   }
 
@@ -130,17 +130,36 @@ export default function Animal({
       : null
     if (!region) return // clipped the sprite plane but missed the body
 
-    const points = SCORING[region]
     const store = useGameStore.getState()
-    store.addScore(points)
-    shots.current.push({ region, points, u: e.uv!.x, v: e.uv!.y })
 
-    const lethal = region === 'head' || region === 'heart' || --hp.current <= 0
-    if (lethal) {
+    // Avoid-target (park ranger): apply the penalty and drop it. No positive
+    // points, and it doesn't count toward accuracy.
+    if (type.penalty != null) {
+      store.addScore(-type.penalty)
+      shots.current.push({
+        region,
+        points: -type.penalty,
+        u: e.uv!.x,
+        v: e.uv!.y,
+        state: displayState,
+      })
       alive.current = false
       dying.current = true
       deadT.current = 0
-      store.addScore(SCORING.killBonus)
+      return
+    }
+
+    const points = SCORING[region]
+    store.addScore(points)
+    store.recordHit()
+    shots.current.push({ region, points, u: e.uv!.x, v: e.uv!.y, state: displayState })
+
+    health.current -= type.damage[region]
+    if (health.current <= 0) {
+      alive.current = false
+      dying.current = true
+      deadT.current = 0
+      store.addScore(type.killBonus)
     }
   }
 

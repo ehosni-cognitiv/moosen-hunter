@@ -1,6 +1,6 @@
 import { useGameStore } from '../state/gameStore'
 import { LEVELS, TOTAL_LEVELS } from '../config/levels'
-import { SCORING } from '../config/animals'
+import { ANIMALS, SCORING } from '../config/animals'
 
 const HERD_LABEL: Record<string, string> = {
   calm: 'GRAZING — take your time',
@@ -76,7 +76,15 @@ export default function HUD() {
         </span>
         <span className="legend__item">
           Kill bonus
-          <span className="legend__pts pos">+{SCORING.killBonus}</span>
+          <span className="legend__pts pos">+{ANIMALS.moose.killBonus}</span>
+        </span>
+        <span className="legend__item">
+          🧔 Moosen bonus
+          <span className="legend__pts pos">+{ANIMALS.moosen.killBonus}</span>
+        </span>
+        <span className="legend__item">
+          🧢 Ranger — don't shoot!
+          <span className="legend__pts neg">−{ANIMALS.ranger.penalty}</span>
         </span>
       </div>
     </div>

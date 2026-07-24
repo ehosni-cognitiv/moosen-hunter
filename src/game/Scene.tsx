@@ -34,9 +34,11 @@ export default function Scene() {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff
       return seed / 0x7fffffff
     }
+    // Exactly one Moosen per level (index 0); the rest are drawn from the
+    // level's weighted spawn table (which never includes the Moosen).
     return Array.from({ length: cfg.animalCount }, (_, i) => ({
       id: i,
-      type: pickType(cfg, r),
+      type: i === 0 ? ANIMALS.moosen : pickType(cfg, r),
       x: (r() * 2 - 1) * 14,
       z: -3 - r() * 15, // -3 .. -18, in front of the camera
       fleeMult: cfg.fleeMult,
