@@ -1,0 +1,504 @@
+/* ---------------------------------------------------------------------------
+   Moosen Hunter UI — chunky arcade styling. All overlays sit above the canvas.
+   A pixel font can be dropped in later; monospace keeps the retro feel for now.
+--------------------------------------------------------------------------- */
+
+:root {
+  --ink: #f4f4ff;
+  --pos: #4dff6a;
+  --neg: #ff5b5b;
+  --gold: #ffcf4d;
+  --panel-bg: rgba(14, 16, 26, 0.92);
+  --panel-border: #46608a;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+/* ---- fullscreen centered screens (title / results / leaderboard) -------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #1a2740, #070a12);
+  font-family: var(--mono);
+  color: var(--ink);
+  padding: 24px;
+}
+
+.panel {
+  width: min(520px, 100%);
+  background: var(--panel-bg);
+  border: 3px solid var(--panel-border);
+  box-shadow: 0 0 0 3px #0a0d16, 0 12px 40px rgba(0, 0, 0, 0.6);
+  padding: 32px 28px;
+  text-align: center;
+  image-rendering: pixelated;
+}
+
+.panel__title {
+  margin: 0 0 8px;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-shadow: 0 3px 0 #7a4a00, 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+.panel__title--sm {
+  font-size: 30px;
+}
+.panel__tag {
+  margin: 0 0 18px;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+.panel__how {
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0 0 22px;
+  opacity: 0.9;
+}
+.panel__buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---- buttons ------------------------------------------------------------ */
+.btn {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: #26314c;
+  border: 2px solid var(--panel-border);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: transform 0.05s, background 0.1s;
+}
+.btn:hover {
+  background: #33436a;
+}
+.btn:active {
+  transform: translateY(2px);
+}
+.btn--primary {
+  background: #c8471f;
+  border-color: #ff8a4d;
+}
+.btn--primary:hover {
+  background: #e0562a;
+}
+
+/* ---- score / entry ------------------------------------------------------ */
+.finalscore {
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--gold);
+  margin: 4px 0 24px;
+  text-shadow: 0 3px 0 #7a4a00;
+}
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.entry__label {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.entry__input {
+  font-family: var(--mono);
+  font-size: 28px;
+  text-align: center;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  width: 220px;
+  padding: 8px;
+  color: var(--ink);
+  background: #0c0f18;
+  border: 2px solid var(--panel-border);
+}
+.entry__input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* ---- results table ------------------------------------------------------ */
+.results {
+  text-align: left;
+  margin: 0 auto 24px;
+  max-width: 320px;
+}
+.results__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #33436a;
+}
+.results__row--total {
+  border-bottom: none;
+  border-top: 2px solid var(--panel-border);
+  margin-top: 6px;
+  padding-top: 12px;
+  font-size: 20px;
+}
+
+/* ---- leaderboard -------------------------------------------------------- */
+.board {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto 24px;
+  max-width: 360px;
+  text-align: left;
+}
+.board__row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 10px;
+  padding: 9px 6px;
+  border-bottom: 1px dashed #33436a;
+  font-size: 17px;
+}
+.board__rank {
+  color: var(--gold);
+  font-weight: 700;
+}
+.board__score {
+  font-weight: 700;
+}
+
+/* ---- HUD ---------------------------------------------------------------- */
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--mono);
+  color: var(--ink);
+  padding: 14px 18px;
+  user-select: none;
+}
+.hud__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+.hud__stat {
+  display: flex;
+  flex-direction: column;
+}
+.hud__stat--center {
+  align-items: center;
+}
+.hud__stat--right {
+  align-items: flex-end;
+}
+.hud__label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+.hud__value {
+  font-size: 24px;
+  font-weight: 800;
+}
+.hud__value--big {
+  font-size: 34px;
+  color: var(--gold);
+}
+.hud__sub {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.hud__ammo {
+  position: absolute;
+  bottom: 16px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.shell {
+  width: 10px;
+  height: 22px;
+  border-radius: 2px;
+  border: 1px solid #000;
+}
+.shell--full {
+  background: var(--gold);
+}
+.shell--empty {
+  background: #2a2f3d;
+}
+.hud__reload {
+  margin-left: 12px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--neg);
+}
+.hud__reload.is-on {
+  color: var(--gold);
+}
+
+.legend {
+  position: absolute;
+  bottom: 14px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend__swatch {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #000;
+}
+.legend__pts {
+  min-width: 42px;
+  text-align: right;
+  font-weight: 700;
+}
+
+/* shared point-color helpers */
+.pos,
+.legend__pts.pos {
+  color: var(--pos);
+}
+.neg,
+.legend__pts.neg {
+  color: var(--neg);
+}
+
+/* ---- crosshair ---------------------------------------------------------- */
+.crosshair-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+.crosshair__ring {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.crosshair__dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  background: var(--neg);
+  border-radius: 50%;
+}
+.crosshair--fire .crosshair__ring {
+  animation: fire 0.14s ease-out;
+}
+@keyframes fire {
+  0% {
+    transform: scale(0.6);
+    border-color: var(--gold);
+  }
+  100% {
+    transform: scale(1);
+    border-color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* ---- floating score popup (rendered via drei <Html>) -------------------- */
+.popup {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.7);
+  animation: popup-rise 0.85s ease-out forwards;
+  pointer-events: none;
+}
+.popup--good {
+  color: var(--pos);
+}
+.popup--bad {
+  color: var(--neg);
+}
+@keyframes popup-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1);
+  }
+}
+
+/* ---- herd status (under the score) -------------------------------------- */
+.hud__herd {
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.hud__herd--calm {
+  color: var(--pos);
+  opacity: 0.85;
+}
+.hud__herd--alert {
+  color: var(--gold);
+  font-weight: 800;
+  animation: blink 0.3s steps(2) infinite;
+}
+.hud__herd--flee {
+  color: var(--neg);
+  font-weight: 800;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* scoring-key swatches */
+.legend__swatch--head {
+  background: var(--gold);
+}
+.legend__swatch--heart {
+  background: var(--neg);
+}
+.legend__swatch--body {
+  background: #dfe3ee;
+}
+
+/* ---- tally screen ------------------------------------------------------- */
+.panel--wide {
+  width: min(620px, 100%);
+}
+.tally__counter {
+  margin: -8px 0 14px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+.tally {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+  flex-wrap: wrap;
+}
+.tally__diagram {
+  position: relative;
+  width: 220px;
+  height: 165px;
+  background: #0c0f18;
+  border: 2px solid var(--panel-border);
+  flex: none;
+}
+.tally__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.marker {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid #000;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.marker--head {
+  background: var(--gold);
+}
+.marker--heart {
+  background: var(--neg);
+}
+.marker--body {
+  background: #dfe3ee;
+}
+.tally__detail {
+  min-width: 220px;
+  flex: 1;
+}
+.tally__name {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.tally__shots {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.tally__shots li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #33436a;
+}
+.tally__shots b {
+  margin-left: auto;
+}
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #000;
+}
+.dot--head {
+  background: var(--gold);
+}
+.dot--heart {
+  background: var(--neg);
+}
+.dot--body {
+  background: #dfe3ee;
+}
+.dot--bonus {
+  background: var(--pos);
+}
+.tally__subtotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  border-top: 2px solid var(--panel-border);
+  padding-top: 8px;
+}
+.tally__running {
+  margin: 18px 0;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+.tally__running b {
+  color: var(--gold);
+  margin-left: 8px;
+}

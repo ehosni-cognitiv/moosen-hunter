@@ -1,0 +1,12 @@
+.app {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide the system cursor while hunting — the custom crosshair replaces it. */
+.app--playing,
+.app--playing * {
+  cursor: none;
+}
