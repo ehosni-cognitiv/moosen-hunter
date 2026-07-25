@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '../state/gameStore'
 import { TOTAL_LEVELS } from '../config/levels'
 import { ANIMALS, hitBoxesFor } from '../config/animals'
@@ -11,122 +11,193 @@ const REGION_LABEL = { head: 'Head', heart: 'Heart', body: 'Body' } as const
 const subtotalOf = (r: { shots: { points: number }[]; bonus: number }) =>
   r.shots.reduce((s, x) => s + x.points, 0) + r.bonus
 
+/** Animates a number toward `target`, starting from `initial` (on mount). */
+function useCountUp(target: number, initial: number) {
+  const [value, setValue] = useState(initial)
+  const valueRef = useRef(initial)
+  useEffect(() => {
+    const from = valueRef.current
+    if (from === target) return
+    const start = performance.now()
+    const dur = 450
+    let raf = 0
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const v = Math.round(from + (target - from) * eased)
+      valueRef.current = v
+      setValue(v)
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target])
+  return value
+}
+
 export default function LevelComplete() {
   const level = useGameStore((s) => s.level)
+  const totalScore = useGameStore((s) => s.totalScore)
+  const levelScore = useGameStore((s) => s.levelScore)
   const results = useGameStore((s) => s.levelResults)
   const shotsFired = useGameStore((s) => s.levelShots)
   const hits = useGameStore((s) => s.levelHits)
   const accuracyBonus = useGameStore((s) => s.levelAccuracyBonus)
   const nextLevel = useGameStore((s) => s.nextLevel)
 
+  const scoreBefore = totalScore - levelScore
   const tallied = useMemo(() => results.filter((r) => r.shots.length > 0), [results])
   const [i, setI] = useState(0)
-  const isLastLevel = level >= TOTAL_LEVELS
-  const advanceLabel = isLastLevel ? 'SEE RESULTS' : 'NEXT LEVEL'
 
-  const animalsTotal = tallied.reduce((sum, r) => sum + subtotalOf(r), 0)
+  const isLastLevel = level >= TOTAL_LEVELS
   const isAccuracyStep = i >= tallied.length
 
-  // ---- final step: accuracy bonus ----
-  if (isAccuracyStep) {
-    const pct = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 0
-    return (
-      <div className="screen">
-        <div className="panel panel--wide">
-          <h2 className="panel__title panel__title--sm">LEVEL {level} — ACCURACY</h2>
-          <div className="results">
-            <div className="results__row">
-              <span>Shots fired</span>
-              <b>{shotsFired}</b>
-            </div>
-            <div className="results__row">
-              <span>Shots on target</span>
-              <b>{hits}</b>
-            </div>
-            <div className="results__row">
-              <span>Accuracy</span>
-              <b>{pct}%</b>
-            </div>
-            <div className="results__row results__row--total">
-              <span>Accuracy bonus</span>
-              <b className="pos">+{accuracyBonus}</b>
-            </div>
-          </div>
-          <div className="tally__running">
-            Level total <b>{animalsTotal + accuracyBonus}</b>
-          </div>
-          <button className="btn btn--primary" onClick={nextLevel}>
-            {advanceLabel}
-          </button>
-        </div>
-      </div>
-    )
-  }
+  // Cumulative points revealed through the current step — the counter targets it.
+  const revealed = useMemo(() => {
+    let sum = 0
+    for (let k = 0; k <= i && k < tallied.length; k++) sum += subtotalOf(tallied[k])
+    if (i >= tallied.length) sum += accuracyBonus
+    return sum
+  }, [i, tallied, accuracyBonus])
 
-  // ---- per-animal tally ----
-  const r = tallied[i]
-  const runningTotal = tallied.slice(0, i + 1).reduce((s, a) => s + subtotalOf(a), 0)
+  const displayedScore = useCountUp(scoreBefore + revealed, scoreBefore)
+
+  const pct = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 0
+
+  // Bonus multiplies accuracy by (kills + headshots); rangers count for neither.
+  const scored = results.filter((r) => ANIMALS[r.typeId].penalty == null)
+  const kills = scored.filter((r) => r.killed).length
+  const headshots = scored.reduce(
+    (sum, r) => sum + r.shots.filter((s) => s.region === 'head').length,
+    0,
+  )
 
   return (
     <div className="screen">
       <div className="panel panel--wide">
-        <h2 className="panel__title panel__title--sm">LEVEL {level} — TALLY</h2>
-        <p className="tally__counter">
-          Animal {i + 1} of {tallied.length}
-        </p>
+        <div className="tally__score">
+          <span className="tally__score-label">SCORE</span>
+          <span className="tally__score-value">{displayedScore}</span>
+        </div>
 
-        <div className="tally">
-          <HitDiagram result={r} />
-
-          <div className="tally__detail">
-            <div className="tally__name">
-              {r.name}{' '}
-              {ANIMALS[r.typeId].penalty != null ? (
-                <span className="neg">✗ RANGER SHOT!</span>
-              ) : r.killed ? (
-                <span className="pos">✓ BAGGED</span>
-              ) : (
-                <span className="neg">wounded — escaped</span>
-              )}
-            </div>
-            <ul className="tally__shots">
-              {r.shots.map((s, k) => (
-                <li key={k}>
-                  <span className={`dot dot--${s.region}`} />
-                  {REGION_LABEL[s.region]}
-                  <b className={s.points >= 0 ? 'pos' : 'neg'}>
-                    {s.points >= 0 ? `+${s.points}` : s.points}
+        {isAccuracyStep ? (
+          <>
+            <h2 className="panel__title panel__title--sm">ACCURACY</h2>
+            <div className="results">
+              <div className="results__row">
+                <span>Shots fired</span>
+                <b>{shotsFired}</b>
+              </div>
+              <div className="results__row">
+                <span>Shots on target</span>
+                <b>{hits}</b>
+              </div>
+              <div className="results__row">
+                <span>Accuracy</span>
+                <b className={pct >= 75 ? 'pos' : ''}>{pct}%</b>
+              </div>
+              <div className="results__row">
+                <span>Kills</span>
+                <b>{kills}</b>
+              </div>
+              <div className="results__row">
+                <span>Headshots</span>
+                <b>{headshots}</b>
+              </div>
+              <div className="results__row results__row--total">
+                <span>Accuracy bonus</span>
+                {accuracyBonus > 0 ? (
+                  <b className="pos">
+                    +{accuracyBonus}{' '}
+                    <span className="tally__hint">
+                      ({pct}% × ({kills} + {headshots}))
+                    </span>
                   </b>
-                </li>
-              ))}
-              {r.killed && r.bonus > 0 && (
-                <li>
-                  <span className="dot dot--bonus" />
-                  {r.typeId === 'moosen'
-                    ? 'Moosen bonus'
-                    : r.typeId === 'golden'
-                      ? 'Golden headshot bonus'
-                      : 'Kill bonus'}
-                  <b className="pos">+{r.bonus}</b>
-                </li>
-              )}
-            </ul>
-            <div className="tally__subtotal">
-              <span>Subtotal</span>
-              <b>{subtotalOf(r)}</b>
+                ) : (
+                  <b className="tally__hint">— need 75%+</b>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div className="tally__running">
-          Running total <b>{runningTotal}</b>
-        </div>
-
-        <button className="btn btn--primary" onClick={() => setI(i + 1)}>
-          {i >= tallied.length - 1 ? 'ACCURACY BONUS' : 'NEXT ANIMAL'}
-        </button>
+            <button className="btn btn--primary" onClick={nextLevel}>
+              {isLastLevel ? 'SEE RESULTS' : 'NEXT LEVEL'}
+            </button>
+          </>
+        ) : (
+          <AnimalStep
+            result={tallied[i]}
+            index={i}
+            count={tallied.length}
+            onNext={() => setI(i + 1)}
+          />
+        )}
       </div>
     </div>
+  )
+}
+
+function AnimalStep({
+  result: r,
+  index,
+  count,
+  onNext,
+}: {
+  result: ReturnType<typeof useGameStore.getState>['levelResults'][number]
+  index: number
+  count: number
+  onNext: () => void
+}) {
+  const isRanger = ANIMALS[r.typeId].penalty != null
+  return (
+    <>
+      <p className="tally__counter">
+        Animal {index + 1} of {count}
+      </p>
+      <div className="tally">
+        <HitDiagram result={r} />
+        <div className="tally__detail">
+          <div className="tally__name">
+            {r.name}{' '}
+            {isRanger ? (
+              <span className="neg">✗ RANGER SHOT!</span>
+            ) : r.killed ? (
+              <span className="pos">✓ BAGGED</span>
+            ) : (
+              <span className="neg">wounded — escaped</span>
+            )}
+          </div>
+          <ul className="tally__shots">
+            {r.shots.map((s, k) => (
+              <li key={k}>
+                <span className={`dot dot--${s.region}`} />
+                {REGION_LABEL[s.region]}
+                <b className={s.points >= 0 ? 'pos' : 'neg'}>
+                  {s.points >= 0 ? `+${s.points}` : s.points}
+                </b>
+              </li>
+            ))}
+            {r.killed && r.bonus > 0 && (
+              <li>
+                <span className="dot dot--bonus" />
+                {r.typeId === 'moosen'
+                  ? 'Moosen bonus'
+                  : r.typeId === 'golden'
+                    ? 'Golden headshot bonus'
+                    : 'Kill bonus'}
+                <b className="pos">+{r.bonus}</b>
+              </li>
+            )}
+          </ul>
+          <div className="tally__subtotal">
+            <span>Subtotal</span>
+            <b className={subtotalOf(r) >= 0 ? '' : 'neg'}>{subtotalOf(r)}</b>
+          </div>
+        </div>
+      </div>
+      <button className="btn btn--primary" onClick={onNext}>
+        {index >= count - 1 ? 'ACCURACY BONUS' : 'NEXT ANIMAL'}
+      </button>
+    </>
   )
 }
 

@@ -116,7 +116,6 @@ export default function GoldenRabbit({
 
     const store = useGameStore.getState()
     const bonus = region === 'head' ? GOLDEN.headshotBonus : 0
-    store.addScore(GOLDEN.points + bonus)
     store.recordHit()
     resolve(
       true,

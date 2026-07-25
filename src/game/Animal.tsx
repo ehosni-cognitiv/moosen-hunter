@@ -169,10 +169,9 @@ export default function Animal({
 
     const store = useGameStore.getState()
 
-    // Avoid-target (park ranger): apply the penalty and drop it. No positive
-    // points, and it doesn't count toward accuracy.
+    // Avoid-target (park ranger): record the penalty and drop it. Doesn't count
+    // toward accuracy. (Points are tallied at level end, not scored live.)
     if (type.penalty != null) {
-      store.addScore(-type.penalty)
       shots.current.push({
         region,
         points: -type.penalty,
@@ -187,7 +186,6 @@ export default function Animal({
     }
 
     const points = SCORING[region]
-    store.addScore(points)
     store.recordHit()
     shots.current.push({ region, points, u: e.uv!.x, v: e.uv!.y, state: displayState })
 
@@ -196,7 +194,6 @@ export default function Animal({
       alive.current = false
       dying.current = true
       deadT.current = 0
-      store.addScore(type.killBonus)
     }
   }
 

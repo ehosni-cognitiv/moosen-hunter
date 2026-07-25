@@ -545,3 +545,28 @@
   color: var(--gold);
   margin-left: 8px;
 }
+
+/* animated cumulative score at the top of the tally */
+.tally__score {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.tally__score-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 3px;
+  opacity: 0.7;
+}
+.tally__score-value {
+  display: block;
+  font-size: 54px;
+  font-weight: 800;
+  color: var(--gold);
+  text-shadow: 0 3px 0 #7a4a00;
+  font-variant-numeric: tabular-nums;
+}
+.tally__hint {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.7;
+}

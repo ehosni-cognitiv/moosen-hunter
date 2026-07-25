@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { TOTAL_LEVELS } from '../config/levels'
-import type { HitRegion } from '../config/animals'
+import { ANIMALS, type HitRegion } from '../config/animals'
 import type { AnimalState } from '../sprites/placeholders'
 import { loadLeaderboard, saveScore, type ScoreEntry } from './leaderboard'
 
@@ -45,6 +45,9 @@ interface GameState {
   levelHits: number
   /** accuracy bonus awarded at the end of the level (for the tally screen) */
   levelAccuracyBonus: number
+  /** total points earned this level (animal points + accuracy bonus), added to
+      totalScore only at endLevel so the tally can animate it counting up */
+  levelScore: number
   /** the one level (after level 2) the golden rabbit appears in, this game */
   goldenLevel: number
   /** bumped on every shot fired — the camera watches this to recoil/shake */
@@ -66,13 +69,10 @@ interface GameState {
   reload: () => void
   /** Move the whole herd from calm → alert → flee. No-op unless calm. */
   alertHerd: () => void
-  addScore: (points: number) => void
   addResult: (result: AnimalResult) => void
   /** record a shot that landed on an animal (for accuracy) */
   recordHit: () => void
 }
-
-const ACCURACY_BONUS_MAX = 200
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'title',
@@ -86,6 +86,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   levelShots: 0,
   levelHits: 0,
   levelAccuracyBonus: 0,
+  levelScore: 0,
   goldenLevel: 0,
   recoilTick: 0,
   leaderboard: loadLeaderboard(),
@@ -110,17 +111,38 @@ export const useGameStore = create<GameState>((set, get) => ({
       levelShots: 0,
       levelHits: 0,
       levelAccuracyBonus: 0,
+      levelScore: 0,
     })
   },
 
   endLevel: () => {
     if (get().phase !== 'playing') return
-    const { levelShots, levelHits } = get()
+    const { levelShots, levelHits, levelResults } = get()
+
+    // Animal points come from the recorded shots (nothing is scored during the
+    // level — the tally animates it), plus each kill's bonus.
+    const animalPoints = levelResults.reduce(
+      (sum, r) => sum + r.shots.reduce((s, x) => s + x.points, 0) + r.bonus,
+      0,
+    )
+
+    // Accuracy bonus (accuracy ≥ 75%): accuracy% × (kills + headshots).
+    // Rangers (penalties) count for neither.
+    const scored = levelResults.filter((r) => ANIMALS[r.typeId].penalty == null)
+    const kills = scored.filter((r) => r.killed).length
+    const headshots = scored.reduce(
+      (sum, r) => sum + r.shots.filter((s) => s.region === 'head').length,
+      0,
+    )
     const accuracy = levelShots > 0 ? levelHits / levelShots : 0
-    const bonus = Math.round(accuracy * ACCURACY_BONUS_MAX)
+    const pct = Math.round(accuracy * 100)
+    const accuracyBonus = pct >= 75 ? pct * (kills + headshots) : 0
+
+    const levelScore = animalPoints + accuracyBonus
     set((s) => ({
-      totalScore: s.totalScore + bonus,
-      levelAccuracyBonus: bonus,
+      totalScore: s.totalScore + levelScore,
+      levelAccuracyBonus: accuracyBonus,
+      levelScore,
       phase: 'levelComplete',
     }))
   },
@@ -184,15 +206,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     }, ALERT_MS)
   },
 
-  addScore: (points) => set((s) => ({ totalScore: s.totalScore + points })),
 
   addResult: (result) =>
     set((s) => ({ levelResults: [...s.levelResults, result] })),
 
   recordHit: () => set((s) => ({ levelHits: s.levelHits + 1 })),
 }))
-
-// TEMP dev hook for verification
-if (import.meta.env.DEV) {
-  ;(window as unknown as { store: typeof useGameStore }).store = useGameStore
-}
