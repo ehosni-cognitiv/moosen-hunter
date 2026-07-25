@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ThreeEvent } from '@react-three/fiber'
+import { DoubleSide } from 'three'
 import { useGameStore, type AnimalResult } from '../state/gameStore'
 import { LEVELS } from '../config/levels'
 import { ANIMALS } from '../config/animals'
@@ -92,6 +94,16 @@ export default function Scene() {
     [addResult, endLevel, total],
   )
 
+  // A shot that hits no animal — fires on pointer DOWN (via the catcher mesh
+  // below) so shooting/recoil is instant, not delayed to pointer-up.
+  const handleMiss = useCallback((e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return // left button only
+    const st = useGameStore.getState()
+    // shoot() spends a round, spooks the herd and bumps recoil; it counts as a
+    // shot (not a hit), so accuracy handles the "miss" implicitly.
+    if (!st.shoot() && !st.reloading) st.reload() // auto-reload on empty
+  }, [])
+
   const pal = cfg.terrain.palette
 
   return (
@@ -102,6 +114,13 @@ export default function Scene() {
       <ambientLight intensity={0.7} />
       <hemisphereLight args={[pal.sky, pal.low, 0.6]} />
       <directionalLight position={[10, 18, 8]} intensity={1.3} castShadow />
+
+      {/* invisible catch-all behind everything: turns a click that hits no
+          animal into an instant (pointer-down) miss */}
+      <mesh position={[0, 6, 18]} onPointerDown={handleMiss}>
+        <sphereGeometry args={[80, 8, 6]} />
+        <meshBasicMaterial colorWrite={false} depthWrite={false} side={DoubleSide} />
+      </mesh>
 
       <Terrain hf={hf} />
       <Decorations cfg={cfg} />

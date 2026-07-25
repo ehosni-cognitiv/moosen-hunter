@@ -146,6 +146,7 @@ export default function Animal({
   })
 
   const handleShot = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return // left button only
     e.stopPropagation()
     if (!alive.current || dying.current) return
     if (!useGameStore.getState().shoot()) return // out of ammo

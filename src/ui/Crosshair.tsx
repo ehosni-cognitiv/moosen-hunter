@@ -19,23 +19,28 @@ export default function Crosshair() {
       useGameStore.getState().reload()
     }
     const onDown = (e: MouseEvent) => {
-      if (e.button === 2) {
-        // right mouse button also reloads (works under pointer lock)
-        useGameStore.getState().reload()
-        return
-      }
+      // right mouse button reloads (works under pointer lock)
+      if (e.button === 2) useGameStore.getState().reload()
+    }
+
+    // Pulse the reticle only on an actual shot (recoilTick bumps in shoot()),
+    // never on the "click to aim" overlay or while reloading.
+    let prevTick = useGameStore.getState().recoilTick
+    const unsub = useGameStore.subscribe((s) => {
+      if (s.recoilTick === prevTick) return
+      prevTick = s.recoilTick
       const el = ref.current
-      // don't pulse the reticle while reloading — the shot won't fire
-      if (!el || useGameStore.getState().reloading) return
+      if (!el) return
       el.classList.remove('crosshair--fire')
       void el.offsetWidth // force reflow so the animation can retrigger
       el.classList.add('crosshair--fire')
-    }
+    })
 
     window.addEventListener('keydown', onKey)
     window.addEventListener('contextmenu', onContext)
     window.addEventListener('pointerdown', onDown)
     return () => {
+      unsub()
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('contextmenu', onContext)
       window.removeEventListener('pointerdown', onDown)

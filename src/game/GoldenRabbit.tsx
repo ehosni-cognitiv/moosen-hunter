@@ -107,6 +107,7 @@ export default function GoldenRabbit({
   })
 
   const handleShot = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return // left button only
     e.stopPropagation()
     if (resolved.current) return
     if (!useGameStore.getState().shoot()) return

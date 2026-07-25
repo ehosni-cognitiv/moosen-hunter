@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGameStore } from '../state/gameStore'
 
-// How far the view can swing from center. Mouse at a screen edge = full swing.
-const MAX_YAW = 0.62 // radians left/right (~35°)
-const MAX_PITCH = 0.24 // radians up/down (~14°)
+// How far the view can swing from center.
+const MAX_YAW = 1.15 // radians left/right (~66°)
+const MAX_PITCH = 0.55 // radians up/down (~31°)
 const BASE_PITCH = -0.18 // resting tilt: looking slightly down at the ground
 
 // Mouse sensitivity when the pointer is locked (radians per pixel moved).

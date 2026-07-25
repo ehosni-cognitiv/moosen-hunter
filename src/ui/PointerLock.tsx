@@ -11,6 +11,9 @@ import { useEffect, useState, type PointerEvent } from 'react'
  */
 export default function PointerLock() {
   const [locked, setLocked] = useState(() => !!document.pointerLockElement)
+  // if the browser refuses pointer lock, fall back to absolute-mouse aiming so
+  // the game stays playable (clicks then reach the canvas normally)
+  const [fallback, setFallback] = useState(false)
 
   useEffect(() => {
     const onChange = () => setLocked(!!document.pointerLockElement)
@@ -21,11 +24,18 @@ export default function PointerLock() {
     }
   }, [])
 
-  if (locked) return null
+  if (locked || fallback) return null
 
   const requestLock = (e: PointerEvent) => {
     e.preventDefault()
-    document.body.requestPointerLock?.()
+    // Lock the CANVAS (not <body>): while locked, mouse events target the lock
+    // element, and R3F's shot handlers live on the canvas — locking an ancestor
+    // would route clicks away from them.
+    const canvas = document.querySelector('canvas')
+    const req = canvas?.requestPointerLock?.()
+    if (req && typeof (req as Promise<void>).catch === 'function') {
+      ;(req as Promise<void>).catch(() => setFallback(true))
+    }
   }
 
   return (

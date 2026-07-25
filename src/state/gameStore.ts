@@ -191,8 +191,3 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   recordHit: () => set((s) => ({ levelHits: s.levelHits + 1 })),
 }))
-
-// TEMP dev hook for verification
-if (import.meta.env.DEV) {
-  ;(window as unknown as { store: typeof useGameStore }).store = useGameStore
-}
