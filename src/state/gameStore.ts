@@ -28,7 +28,7 @@ export interface AnimalResult {
 }
 
 const MAX_AMMO = 6
-const RELOAD_MS = 700
+const RELOAD_MS = 1100
 const ALERT_MS = 700
 
 interface GameState {
@@ -47,6 +47,8 @@ interface GameState {
   levelAccuracyBonus: number
   /** the one level (after level 2) the golden rabbit appears in, this game */
   goldenLevel: number
+  /** bumped on every shot fired — the camera watches this to recoil/shake */
+  recoilTick: number
   leaderboard: ScoreEntry[]
 
   startGame: () => void
@@ -85,6 +87,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   levelHits: 0,
   levelAccuracyBonus: 0,
   goldenLevel: 0,
+  recoilTick: 0,
   leaderboard: loadLeaderboard(),
 
   startGame: () => {
@@ -154,7 +157,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!s.reloading) s.reload()
       return false
     }
-    set((st) => ({ levelShots: st.levelShots + 1 }))
+    set((st) => ({ levelShots: st.levelShots + 1, recoilTick: st.recoilTick + 1 }))
     s.alertHerd()
     return true
   },

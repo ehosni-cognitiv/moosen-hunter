@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { Billboard } from '@react-three/drei'
-import type { MeshBasicMaterial, Texture } from 'three'
+import { DoubleSide, type MeshBasicMaterial, type Texture } from 'three'
 
 /**
  * A camera-facing 2D sprite (billboard) living in the 3D world, animated by
@@ -61,6 +61,7 @@ export default function AnimatedSprite({
           alphaTest={0.5}
           opacity={opacity}
           toneMapped={false}
+          side={DoubleSide}
         />
       </mesh>
     </Billboard>

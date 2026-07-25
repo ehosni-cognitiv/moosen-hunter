@@ -31,6 +31,9 @@ export interface AnimalInstance {
 
 const BOUND = 38
 const DEATH_TIME = 0.45
+// Flee slower than the raw speeds so the scatter lasts longer (~1.5×), giving
+// the player more time to hunt the fleeing herd.
+const SCATTER_SLOWDOWN = 1.5
 
 export default function Animal({
   inst,
@@ -116,7 +119,7 @@ export default function Animal({
         fleeDir.current = { x: lateral / len, z: -1 / len }
         setFlipX(fleeDir.current.x < 0)
       }
-      const speed = type.fleeSpeed * inst.fleeMult
+      const speed = (type.fleeSpeed * inst.fleeMult) / SCATTER_SLOWDOWN
       x.current += fleeDir.current.x * speed * delta
       z.current += fleeDir.current.z * speed * delta
       if (type.spec.bird) fly.current += delta * 3 // birds take off / climb

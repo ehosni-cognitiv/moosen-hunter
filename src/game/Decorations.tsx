@@ -39,7 +39,8 @@ export default function Decorations({ cfg }: { cfg: LevelConfig }) {
   })
   const bushFrames = useFrames(`bush-L${cfg.level}`, {
     kind: 'proc',
-    make: () => makeBushFrames(pal.mid, pal.high),
+    // tinted from low/mid (greener) rather than the washed-out high colour
+    make: () => makeBushFrames(pal.low, pal.mid),
   })
 
   const trees = useMemo<Item[]>(() => {

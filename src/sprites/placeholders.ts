@@ -316,8 +316,8 @@ export function makeGrassFrames(color = '#4f7a3a'): HTMLCanvasElement[] {
 
 /** A small rounded shrub; the top tuft sways a little across frames. */
 export function makeBushFrames(
-  color: string,
-  color2: string,
+  dark: string,
+  light: string,
 ): HTMLCanvasElement[] {
   const W = 32
   const H = 24
@@ -329,12 +329,14 @@ export function makeBushFrames(
       ctx.fillStyle = col
       ctx.fillRect(Math.round(bx), Math.round(by), bw, bh)
     }
-    // rounded mound built from stacked blocks
-    blob(5, 16, 22, 7, color) // wide base
-    blob(3, 13, 26, 5, color)
-    blob(7, 9, 18, 5, color)
-    blob(6 + sway, 6, 9, 4, color2) // left tuft (sways)
-    blob(16 - sway, 5, 9, 5, color2) // right tuft (sways)
+    // rounded mound: wide base with side lobes, lighter tufts on top
+    blob(6, 17, 20, 6, dark) // base
+    blob(3, 15, 6, 5, dark) // left lobe
+    blob(23, 15, 6, 5, dark) // right lobe
+    blob(7, 12, 18, 5, dark)
+    blob(10, 8, 12, 5, light) // upper mound
+    blob(13, 6, 7, 3, light) // rounded top
+    blob(12 + sway, 4, 6, 3, light) // small swaying tuft
     frames.push(c)
   }
   return frames

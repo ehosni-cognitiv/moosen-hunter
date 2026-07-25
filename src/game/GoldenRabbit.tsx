@@ -50,6 +50,7 @@ export default function GoldenRabbit({
   const group = useRef<Group>(null)
   const elapsed = useRef(0)
   const [active, setActive] = useState(false)
+  const [flipX, setFlipX] = useState(false)
   const axis = useRef<Axis>('x') // which way it crosses the map
   const dir = useRef<1 | -1>(1) // direction along the cross axis
   const x = useRef(0)
@@ -78,6 +79,7 @@ export default function GoldenRabbit({
           z.current = dir.current > 0 ? Z_FAR : Z_NEAR // enter from top/bottom
           x.current = 0
         }
+        setFlipX(axis.current === 'x' && dir.current < 0) // face travel direction
         setActive(true)
       }
       return
@@ -130,6 +132,7 @@ export default function GoldenRabbit({
         frames={runF}
         fps={type.fps.run}
         size={type.size}
+        flipX={flipX}
         onPointerDown={handleShot}
       />
     </group>
