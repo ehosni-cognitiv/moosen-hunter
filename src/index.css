@@ -1,6 +1,27 @@
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/PressStart2P.woff2') format('woff2');
+}
+
 :root {
-  --bg: #10101a;
-  font-family: system-ui, -apple-system, sans-serif;
+  /* arcade palette — basic bright colors on black */
+  --bg: #000000;
+  --white: #ffffff;
+  --yellow: #ffe000;
+  --green: #35e35b;
+  --red: #ff4242;
+  --blue: #4db2ff;
+  --dim: #8f8f8f;
+
+  --pixel: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+
+  font-family: var(--pixel);
+  color: var(--white);
+  /* keep the pixel font crisp */
+  -webkit-font-smoothing: none;
 }
 
 * {
@@ -18,9 +39,7 @@ body,
   background: var(--bg);
 }
 
-/* Crisp, blocky upscaling for the low-res WebGL canvas — the core of the
-   pixelated look. The scene renders at a reduced resolution (see Game.tsx)
-   and the browser scales it up with nearest-neighbor sampling. */
+/* Crisp, blocky upscaling for the low-res WebGL canvas. */
 canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;

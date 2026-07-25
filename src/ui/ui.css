@@ -1,16 +1,17 @@
 /* ---------------------------------------------------------------------------
-   Moosen Hunter UI — chunky arcade styling. All overlays sit above the canvas.
-   A pixel font can be dropped in later; monospace keeps the retro feel for now.
+   Moosen Hunter UI — simple retro arcade styling.
+   Press Start 2P pixel font, solid black backgrounds (no gradients), chunky
+   borders, and basic bright colors (white / yellow / green / red).
 --------------------------------------------------------------------------- */
 
-:root {
-  --ink: #f4f4ff;
-  --pos: #4dff6a;
-  --neg: #ff5b5b;
-  --gold: #ffcf4d;
-  --panel-bg: rgba(14, 16, 26, 0.92);
-  --panel-border: #46608a;
-  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+.pos {
+  color: var(--green);
+}
+.neg {
+  color: var(--red);
+}
+.dim {
+  color: var(--dim);
 }
 
 /* ---- fullscreen centered screens (title / results / leaderboard) -------- */
@@ -20,155 +21,162 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 30%, #1a2740, #070a12);
-  font-family: var(--mono);
-  color: var(--ink);
+  background: #000;
+  color: var(--white);
   padding: 24px;
 }
 
 .panel {
-  width: min(520px, 100%);
-  background: var(--panel-bg);
-  border: 3px solid var(--panel-border);
-  box-shadow: 0 0 0 3px #0a0d16, 0 12px 40px rgba(0, 0, 0, 0.6);
-  padding: 32px 28px;
+  width: min(560px, 100%);
+  background: #000;
+  border: 4px solid var(--white);
+  box-shadow: 8px 8px 0 #1a1a1a;
+  padding: 28px 24px;
   text-align: center;
-  image-rendering: pixelated;
+}
+.panel--wide {
+  width: min(640px, 100%);
 }
 
 .panel__title {
-  margin: 0 0 8px;
-  font-size: 46px;
-  font-weight: 800;
-  letter-spacing: 4px;
-  color: var(--gold);
-  text-shadow: 0 3px 0 #7a4a00, 0 4px 8px rgba(0, 0, 0, 0.6);
+  margin: 0 0 14px;
+  font-size: 24px;
+  line-height: 1.4;
+  color: var(--yellow);
 }
 .panel__title--sm {
-  font-size: 30px;
+  font-size: 15px;
 }
 .panel__tag {
   margin: 0 0 18px;
-  opacity: 0.8;
-  letter-spacing: 1px;
+  font-size: 9px;
+  line-height: 1.9;
+  color: var(--dim);
 }
 .panel__how {
-  font-size: 14px;
-  line-height: 1.9;
+  font-size: 9px;
+  line-height: 2.2;
   margin: 0 0 22px;
-  opacity: 0.9;
+}
+.panel__how b {
+  color: var(--yellow);
 }
 .panel__buttons {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
 /* ---- buttons ------------------------------------------------------------ */
 .btn {
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--ink);
-  background: #26314c;
-  border: 2px solid var(--panel-border);
-  padding: 12px 20px;
+  font-family: var(--pixel);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--white);
+  background: #000;
+  border: 3px solid var(--white);
+  box-shadow: 4px 4px 0 #000;
+  padding: 12px 16px;
   cursor: pointer;
-  transition: transform 0.05s, background 0.1s;
+  text-transform: uppercase;
 }
 .btn:hover {
-  background: #33436a;
+  background: var(--white);
+  color: #000;
 }
 .btn:active {
-  transform: translateY(2px);
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 .btn--primary {
-  background: #c8471f;
-  border-color: #ff8a4d;
+  color: var(--yellow);
+  border-color: var(--yellow);
 }
 .btn--primary:hover {
-  background: #e0562a;
+  background: var(--yellow);
+  color: #000;
 }
 
-/* ---- score / entry ------------------------------------------------------ */
+/* ---- score / name entry (game over) ------------------------------------- */
 .finalscore {
-  font-size: 64px;
-  font-weight: 800;
-  color: var(--gold);
-  margin: 4px 0 24px;
-  text-shadow: 0 3px 0 #7a4a00;
+  font-size: 40px;
+  color: var(--yellow);
+  margin: 10px 0 24px;
 }
 .entry {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
 }
 .entry__label {
-  font-size: 13px;
-  opacity: 0.8;
+  font-size: 8px;
+  line-height: 1.8;
+  color: var(--dim);
 }
 .entry__input {
-  font-family: var(--mono);
-  font-size: 28px;
+  font-family: var(--pixel);
+  font-size: 18px;
   text-align: center;
-  letter-spacing: 6px;
+  letter-spacing: 4px;
   text-transform: uppercase;
   width: 220px;
-  padding: 8px;
-  color: var(--ink);
-  background: #0c0f18;
-  border: 2px solid var(--panel-border);
+  padding: 12px 8px;
+  color: var(--white);
+  background: #000;
+  border: 3px solid var(--white);
 }
 .entry__input:focus {
   outline: none;
-  border-color: var(--gold);
+  border-color: var(--yellow);
+  color: var(--yellow);
 }
 
-/* ---- results table ------------------------------------------------------ */
+/* ---- results table (tally accuracy) ------------------------------------- */
 .results {
   text-align: left;
-  margin: 0 auto 24px;
-  max-width: 320px;
+  margin: 0 auto 22px;
+  max-width: 380px;
+  font-size: 10px;
 }
 .results__row {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px dashed #33436a;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 2px solid #222;
 }
 .results__row--total {
   border-bottom: none;
-  border-top: 2px solid var(--panel-border);
-  margin-top: 6px;
+  border-top: 3px solid var(--white);
+  margin-top: 4px;
   padding-top: 12px;
-  font-size: 20px;
+  font-size: 12px;
 }
 
 /* ---- leaderboard -------------------------------------------------------- */
 .board {
   list-style: none;
   padding: 0;
-  margin: 0 auto 24px;
-  max-width: 360px;
+  margin: 0 auto 22px;
+  max-width: 400px;
   text-align: left;
+  font-size: 11px;
 }
 .board__row {
   display: grid;
-  grid-template-columns: 32px 1fr auto;
+  grid-template-columns: 34px 1fr auto;
   gap: 10px;
-  padding: 9px 6px;
-  border-bottom: 1px dashed #33436a;
-  font-size: 17px;
+  padding: 11px 4px;
+  border-bottom: 2px solid #222;
 }
 .board__rank {
-  color: var(--gold);
-  font-weight: 700;
+  color: var(--yellow);
 }
 .board__score {
-  font-weight: 700;
+  color: var(--green);
 }
 
 /* ---- HUD ---------------------------------------------------------------- */
@@ -176,20 +184,19 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  font-family: var(--mono);
-  color: var(--ink);
-  padding: 14px 18px;
+  color: var(--white);
+  padding: 14px 16px;
   user-select: none;
 }
 .hud__top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
 }
 .hud__stat {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 .hud__stat--center {
   align-items: center;
@@ -198,27 +205,44 @@
   align-items: flex-end;
 }
 .hud__label {
-  font-size: 11px;
-  letter-spacing: 2px;
-  opacity: 0.7;
+  font-size: 7px;
+  color: var(--dim);
 }
 .hud__value {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 16px;
 }
 .hud__value--big {
-  font-size: 34px;
-  color: var(--gold);
+  font-size: 22px;
+  color: var(--yellow);
 }
 .hud__sub {
-  font-size: 11px;
-  opacity: 0.6;
+  font-size: 7px;
+  color: var(--dim);
+}
+.hud__herd {
+  font-size: 8px;
+  margin-top: 3px;
+}
+.hud__herd--calm {
+  color: var(--green);
+}
+.hud__herd--alert {
+  color: var(--yellow);
+  animation: blink 0.4s steps(2) infinite;
+}
+.hud__herd--flee {
+  color: var(--red);
+}
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .hud__ammo {
   position: absolute;
   bottom: 16px;
-  left: 18px;
+  left: 16px;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -226,35 +250,33 @@
 .shell {
   width: 10px;
   height: 22px;
-  border-radius: 2px;
-  border: 1px solid #000;
+  border: 2px solid #000;
 }
 .shell--full {
-  background: var(--gold);
+  background: var(--yellow);
 }
 .shell--empty {
-  background: #2a2f3d;
+  background: #333;
 }
 .hud__reload {
   margin-left: 12px;
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--neg);
+  font-size: 8px;
+  color: var(--red);
 }
 .hud__reload.is-on {
-  color: var(--gold);
+  color: var(--yellow);
 }
 
 .legend {
   position: absolute;
   bottom: 14px;
-  right: 18px;
+  right: 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
-  font-size: 11px;
-  opacity: 0.85;
+  gap: 6px;
+  font-size: 8px;
+  line-height: 1.4;
 }
 .legend__item {
   display: flex;
@@ -262,24 +284,28 @@
   gap: 6px;
 }
 .legend__swatch {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border: 1px solid #000;
+}
+.legend__swatch--head {
+  background: var(--yellow);
+}
+.legend__swatch--heart {
+  background: var(--red);
+}
+.legend__swatch--body {
+  background: var(--white);
 }
 .legend__pts {
   min-width: 42px;
   text-align: right;
-  font-weight: 700;
 }
-
-/* shared point-color helpers */
-.pos,
 .legend__pts.pos {
-  color: var(--pos);
+  color: var(--green);
 }
-.neg,
 .legend__pts.neg {
-  color: var(--neg);
+  color: var(--red);
 }
 
 /* ---- crosshair ---------------------------------------------------------- */
@@ -298,34 +324,41 @@
 }
 .crosshair__ring {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 3px solid var(--white);
 }
 .crosshair__dot {
   position: absolute;
   width: 4px;
   height: 4px;
   margin: -2px 0 0 -2px;
-  background: var(--neg);
-  border-radius: 50%;
+  background: var(--red);
 }
 .crosshair__reloading {
   position: absolute;
   transform: translate(-50%, -50%);
   white-space: nowrap;
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--gold);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.75);
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--yellow);
+}
+.crosshair--fire .crosshair__ring {
+  animation: fire 0.14s steps(2);
+}
+@keyframes fire {
+  0% {
+    transform: scale(0.55);
+    border-color: var(--yellow);
+  }
+  100% {
+    transform: scale(1);
+    border-color: var(--white);
+  }
 }
 
-/* ---- pointer-lock "click to aim" overlay --------------------------------- */
+/* ---- pointer-lock "click to aim" overlay -------------------------------- */
 .lock-prompt {
   position: absolute;
   inset: 0;
@@ -333,123 +366,54 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 10, 16, 0.45);
+  background: rgba(0, 0, 0, 0.55);
   cursor: crosshair;
 }
 .lock-prompt__panel {
   text-align: center;
-  color: var(--ink);
   pointer-events: none;
   user-select: none;
 }
 .lock-prompt__title {
-  font-family: var(--mono);
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: 4px;
-  color: var(--gold);
-  text-shadow: 0 3px 0 #7a4a00, 0 4px 8px rgba(0, 0, 0, 0.6);
+  font-size: 22px;
+  color: var(--yellow);
+  animation: blink 0.7s steps(2) infinite;
 }
 .lock-prompt__hint {
-  margin-top: 10px;
-  font-size: 13px;
-  letter-spacing: 1px;
-  opacity: 0.8;
-}
-.crosshair--fire .crosshair__ring {
-  animation: fire 0.14s ease-out;
-}
-@keyframes fire {
-  0% {
-    transform: scale(0.6);
-    border-color: var(--gold);
-  }
-  100% {
-    transform: scale(1);
-    border-color: rgba(255, 255, 255, 0.9);
-  }
-}
-
-/* ---- floating score popup (rendered via drei <Html>) -------------------- */
-.popup {
-  font-family: var(--mono);
-  font-size: 22px;
-  font-weight: 800;
-  white-space: nowrap;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.7);
-  animation: popup-rise 0.85s ease-out forwards;
-  pointer-events: none;
-}
-.popup--good {
-  color: var(--pos);
-}
-.popup--bad {
-  color: var(--neg);
-}
-@keyframes popup-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(6px) scale(0.8);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(0) scale(1.1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-28px) scale(1);
-  }
-}
-
-/* ---- herd status (under the score) -------------------------------------- */
-.hud__herd {
-  font-size: 12px;
-  letter-spacing: 1px;
-  margin-top: 2px;
-}
-.hud__herd--calm {
-  color: var(--pos);
-  opacity: 0.85;
-}
-.hud__herd--alert {
-  color: var(--gold);
-  font-weight: 800;
-  animation: blink 0.3s steps(2) infinite;
-}
-.hud__herd--flee {
-  color: var(--neg);
-  font-weight: 800;
-}
-@keyframes blink {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-/* scoring-key swatches */
-.legend__swatch--head {
-  background: var(--gold);
-}
-.legend__swatch--heart {
-  background: var(--neg);
-}
-.legend__swatch--body {
-  background: #dfe3ee;
+  margin-top: 14px;
+  font-size: 8px;
+  color: var(--white);
 }
 
 /* ---- tally screen ------------------------------------------------------- */
-.panel--wide {
-  width: min(620px, 100%);
+.tally__score {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.tally__score-label {
+  display: block;
+  font-size: 8px;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+.tally__score-value {
+  display: block;
+  font-size: 34px;
+  color: var(--yellow);
+  font-variant-numeric: tabular-nums;
+}
+.tally__hint {
+  font-size: 8px;
+  color: var(--dim);
 }
 .tally__counter {
-  margin: -8px 0 14px;
-  font-size: 12px;
-  letter-spacing: 2px;
-  opacity: 0.7;
+  margin: 0 0 16px;
+  font-size: 8px;
+  color: var(--dim);
 }
 .tally {
   display: flex;
-  gap: 22px;
+  gap: 20px;
   align-items: center;
   justify-content: center;
   text-align: left;
@@ -457,10 +421,10 @@
 }
 .tally__diagram {
   position: relative;
-  width: 220px;
-  height: 165px;
-  background: #0c0f18;
-  border: 2px solid var(--panel-border);
+  width: 200px;
+  height: 150px;
+  background: #000;
+  border: 3px solid var(--white);
   flex: none;
 }
 .tally__img {
@@ -471,30 +435,29 @@
 }
 .marker {
   position: absolute;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
-  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
   border: 2px solid #000;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
 .marker--head {
-  background: var(--gold);
+  background: var(--yellow);
 }
 .marker--heart {
-  background: var(--neg);
+  background: var(--red);
 }
 .marker--body {
-  background: #dfe3ee;
+  background: var(--white);
 }
 .tally__detail {
   min-width: 220px;
   flex: 1;
+  font-size: 9px;
 }
 .tally__name {
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  line-height: 1.6;
 }
 .tally__shots {
   list-style: none;
@@ -505,68 +468,42 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 0;
-  border-bottom: 1px dashed #33436a;
+  padding: 7px 0;
+  border-bottom: 2px solid #222;
 }
 .tally__shots b {
   margin-left: auto;
 }
 .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
   border: 1px solid #000;
+  flex: none;
 }
 .dot--head {
-  background: var(--gold);
+  background: var(--yellow);
 }
 .dot--heart {
-  background: var(--neg);
+  background: var(--red);
 }
 .dot--body {
-  background: #dfe3ee;
+  background: var(--white);
 }
 .dot--bonus {
-  background: var(--pos);
+  background: var(--green);
 }
 .tally__subtotal {
   display: flex;
   justify-content: space-between;
-  font-size: 18px;
-  border-top: 2px solid var(--panel-border);
-  padding-top: 8px;
+  font-size: 11px;
+  border-top: 3px solid var(--white);
+  padding-top: 10px;
 }
 .tally__running {
   margin: 18px 0;
-  font-size: 20px;
-  letter-spacing: 1px;
+  font-size: 11px;
 }
 .tally__running b {
-  color: var(--gold);
+  color: var(--yellow);
   margin-left: 8px;
-}
-
-/* animated cumulative score at the top of the tally */
-.tally__score {
-  text-align: center;
-  margin-bottom: 16px;
-}
-.tally__score-label {
-  display: block;
-  font-size: 12px;
-  letter-spacing: 3px;
-  opacity: 0.7;
-}
-.tally__score-value {
-  display: block;
-  font-size: 54px;
-  font-weight: 800;
-  color: var(--gold);
-  text-shadow: 0 3px 0 #7a4a00;
-  font-variant-numeric: tabular-nums;
-}
-.tally__hint {
-  font-size: 13px;
-  font-weight: 400;
-  opacity: 0.7;
 }
