@@ -31,6 +31,7 @@ export interface AnimalInstance {
 
 const BOUND = 38
 const DEATH_TIME = 0.45
+const FALL_TIME = 0.7 // how long a shot bird takes to fall to the ground
 // Flee slower than the raw speeds so the scatter lasts longer (~1.5×), giving
 // the player more time to hunt the fleeing herd.
 const SCATTER_SLOWDOWN = 1.5
@@ -99,13 +100,23 @@ export default function Animal({
     const g = group.current
     if (!g) return
 
-    // death: shrink + drop, then resolve as a kill
+    // death, then resolve as a kill
     if (dying.current) {
       deadT.current += delta
-      const k = Math.min(deadT.current / DEATH_TIME, 1)
-      g.scale.setScalar(1 - k)
-      g.position.y = hf.heightAt(x.current, z.current) + type.size[1] / 2 - k * 0.5
-      if (k >= 1) resolve(true)
+      const groundY = hf.heightAt(x.current, z.current) + type.size[1] / 2
+      if (fly.current > 0.5) {
+        // airborne: fall out of the sky (accelerating) to the ground
+        const k = Math.min(deadT.current / FALL_TIME, 1)
+        g.position.y = groundY + fly.current * (1 - k * k) // gravity ease-in
+        g.scale.setScalar(k > 0.85 ? 1 - (k - 0.85) / 0.15 : 1) // small splat on landing
+        if (k >= 1) resolve(true)
+      } else {
+        // grounded: shrink + sink
+        const k = Math.min(deadT.current / DEATH_TIME, 1)
+        g.scale.setScalar(1 - k)
+        g.position.y = groundY - k * 0.5
+        if (k >= 1) resolve(true)
+      }
       return
     }
 

@@ -134,7 +134,7 @@ export default function Scene() {
       {isGoldenLevel && !goldenGone && (
         <GoldenRabbit
           id={GOLDEN_ID}
-          spawnDelay={cfg.planTime / 2}
+          spawnDelay={cfg.planTime / 4}
           onResolve={handleResolve}
         />
       )}
