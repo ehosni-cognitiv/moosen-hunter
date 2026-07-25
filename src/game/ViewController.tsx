@@ -7,9 +7,15 @@ const MAX_YAW = 0.62 // radians left/right (~35°)
 const MAX_PITCH = 0.24 // radians up/down (~14°)
 const BASE_PITCH = -0.18 // resting tilt: looking slightly down at the ground
 
-// Recoil shake on each shot.
-const SHAKE_AMOUNT = 0.03 // peak jitter in radians (~1.7°)
-const SHAKE_KICK = 0.02 // upward kick in radians
+// Mouse sensitivity when the pointer is locked (radians per pixel moved).
+const SENSITIVITY = 0.0022
+
+// Recoil shake on each shot (kept subtle).
+const SHAKE_AMOUNT = 0.007 // peak jitter in radians
+const SHAKE_KICK = 0.005 // upward kick in radians
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v))
 
 /**
  * Turns the camera into a mouse-scanned scope:
@@ -49,10 +55,25 @@ export default function ViewController() {
     })
 
     const onMove = (e: MouseEvent) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1 // -1 (left) .. 1 (right)
-      const ny = (e.clientY / window.innerHeight) * 2 - 1 // -1 (top) .. 1 (bottom)
-      target.current.yaw = -nx * MAX_YAW
-      target.current.pitch = BASE_PITCH - ny * MAX_PITCH
+      if (document.pointerLockElement) {
+        // locked: accumulate relative movement (clamped to the swing limits)
+        target.current.yaw = clamp(
+          target.current.yaw - e.movementX * SENSITIVITY,
+          -MAX_YAW,
+          MAX_YAW,
+        )
+        target.current.pitch = clamp(
+          target.current.pitch - e.movementY * SENSITIVITY,
+          BASE_PITCH - MAX_PITCH,
+          BASE_PITCH + MAX_PITCH,
+        )
+      } else {
+        // fallback (before the pointer is locked): absolute position
+        const nx = (e.clientX / window.innerWidth) * 2 - 1
+        const ny = (e.clientY / window.innerHeight) * 2 - 1
+        target.current.yaw = -nx * MAX_YAW
+        target.current.pitch = BASE_PITCH - ny * MAX_PITCH
+      }
     }
     window.addEventListener('mousemove', onMove)
     return () => window.removeEventListener('mousemove', onMove)
