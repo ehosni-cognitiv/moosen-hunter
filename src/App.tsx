@@ -1,6 +1,7 @@
 import { useGameStore } from './state/gameStore'
 import Game from './game/Game'
 import Crosshair from './ui/Crosshair'
+import PointerLock from './ui/PointerLock'
 import HUD from './ui/HUD'
 import TitleScreen from './ui/TitleScreen'
 import LevelComplete from './ui/LevelComplete'
@@ -20,6 +21,7 @@ function App() {
           <Game />
           <HUD />
           <Crosshair />
+          <PointerLock />
         </>
       )}
       {phase === 'title' && <TitleScreen />}

@@ -2,12 +2,13 @@ import { useEffect, useRef } from 'react'
 import { useGameStore } from '../state/gameStore'
 
 /**
- * Custom crosshair that follows the mouse (the camera never moves, so this is
- * purely a screen-space aiming reticle). Also wires up reload shortcuts:
- * right-click or the `R` key.
+ * Centered aiming reticle. While reloading it's replaced by a "RELOADING…"
+ * label (and doesn't pulse on click, since you can't fire). Also wires up
+ * reload shortcuts: right-click or the `R` key.
  */
 export default function Crosshair() {
   const ref = useRef<HTMLDivElement>(null)
+  const reloading = useGameStore((s) => s.reloading)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -17,12 +18,17 @@ export default function Crosshair() {
       e.preventDefault()
       useGameStore.getState().reload()
     }
-    const onDown = () => {
+    const onDown = (e: MouseEvent) => {
+      if (e.button === 2) {
+        // right mouse button also reloads (works under pointer lock)
+        useGameStore.getState().reload()
+        return
+      }
       const el = ref.current
-      if (!el) return
+      // don't pulse the reticle while reloading — the shot won't fire
+      if (!el || useGameStore.getState().reloading) return
       el.classList.remove('crosshair--fire')
-      // force reflow so the animation can retrigger
-      void el.offsetWidth
+      void el.offsetWidth // force reflow so the animation can retrigger
       el.classList.add('crosshair--fire')
     }
 
@@ -39,8 +45,14 @@ export default function Crosshair() {
   return (
     <div className="crosshair-layer">
       <div ref={ref} className="crosshair">
-        <span className="crosshair__ring" />
-        <span className="crosshair__dot" />
+        {reloading ? (
+          <span className="crosshair__reloading">RELOADING…</span>
+        ) : (
+          <>
+            <span className="crosshair__ring" />
+            <span className="crosshair__dot" />
+          </>
+        )}
       </div>
     </div>
   )

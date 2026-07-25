@@ -313,6 +313,49 @@
   background: var(--neg);
   border-radius: 50%;
 }
+.crosshair__reloading {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.75);
+}
+
+/* ---- pointer-lock "click to aim" overlay --------------------------------- */
+.lock-prompt {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 10, 16, 0.45);
+  cursor: crosshair;
+}
+.lock-prompt__panel {
+  text-align: center;
+  color: var(--ink);
+  pointer-events: none;
+  user-select: none;
+}
+.lock-prompt__title {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-shadow: 0 3px 0 #7a4a00, 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+.lock-prompt__hint {
+  margin-top: 10px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
 .crosshair--fire .crosshair__ring {
   animation: fire 0.14s ease-out;
 }
