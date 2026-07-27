@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { Billboard } from '@react-three/drei'
-import { DoubleSide, type MeshBasicMaterial, type Texture } from 'three'
+import { DoubleSide, type Mesh, type MeshBasicMaterial, type Texture } from 'three'
 
 /**
  * A camera-facing 2D sprite (billboard) living in the 3D world, animated by
@@ -19,6 +19,8 @@ export default function AnimatedSprite({
   offset = 0,
   /** mirror horizontally (for sprites travelling left) */
   flipX = false,
+  /** live in-plane roll in radians (spin around the view axis, e.g. on death) */
+  rollRef,
 }: {
   frames: Texture[] | null
   fps?: number
@@ -28,12 +30,18 @@ export default function AnimatedSprite({
   onPointerDown?: (e: ThreeEvent<PointerEvent>) => void
   offset?: number
   flipX?: boolean
+  rollRef?: { current: number }
 }) {
   const mat = useRef<MeshBasicMaterial>(null)
+  const mesh = useRef<Mesh>(null)
   const idx = useRef(Math.floor(offset))
   const acc = useRef(0)
 
   useFrame((_, delta) => {
+    // spin the plane in screen space (the Billboard would override any parent
+    // rotation, so the roll is applied to the mesh itself)
+    if (mesh.current && rollRef) mesh.current.rotation.z = rollRef.current
+
     if (!mat.current || !frames || frames.length === 0 || !playing) return
     acc.current += delta
     const step = 1 / fps
@@ -52,7 +60,7 @@ export default function AnimatedSprite({
     <Billboard>
       {/* scale.x = -1 mirrors both the texture and its UVs, so hit regions
           stay consistent with the visible (flipped) sprite */}
-      <mesh onPointerDown={onPointerDown} scale={[flipX ? -1 : 1, 1, 1]}>
+      <mesh ref={mesh} onPointerDown={onPointerDown} scale={[flipX ? -1 : 1, 1, 1]}>
         <planeGeometry args={size} />
         <meshBasicMaterial
           ref={mat}

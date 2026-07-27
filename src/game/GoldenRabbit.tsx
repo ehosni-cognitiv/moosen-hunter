@@ -17,6 +17,8 @@ import AnimatedSprite from '../sprites/AnimatedSprite'
 // A bit faster than a fleeing animal (~1.25×), but catchable.
 const SPEED = 10
 const ZIG_RATE = 7 // perpendicular zig-zag speed
+const DEATH_TIME = 0.45 // shrink-out duration when killed
+const SPIN_SPEED = 22 // radians/sec it spins while dying
 
 // Travel extents just beyond the visible area, per axis.
 const X_EDGE = 22 // left/right entry & exit
@@ -57,6 +59,11 @@ export default function GoldenRabbit({
   const z = useRef(-8)
   const zigDir = useRef<1 | -1>(1) // direction along the perpendicular axis
   const resolved = useRef(false)
+  const dying = useRef(false)
+  const deadT = useRef(0)
+  const roll = useRef(0)
+  const killShot = useRef<ShotRecord | null>(null)
+  const killBonus = useRef(0)
 
   const resolve = (killed: boolean, shots: ShotRecord[], bonus: number) => {
     if (resolved.current) return
@@ -87,6 +94,19 @@ export default function GoldenRabbit({
     const g = group.current
     if (!g || resolved.current) return
 
+    // death: spin + shrink where it fell, then resolve as a kill
+    if (dying.current) {
+      deadT.current += delta
+      roll.current += delta * SPIN_SPEED
+      const k = Math.min(deadT.current / DEATH_TIME, 1)
+      const groundY = hf.heightAt(x.current, z.current) + type.size[1] / 2
+      g.scale.setScalar(1 - k)
+      g.position.set(x.current, groundY - k * 0.5, z.current)
+      if (k >= 1)
+        resolve(true, killShot.current ? [killShot.current] : [], killBonus.current)
+      return
+    }
+
     if (axis.current === 'x') {
       // cross left↔right, zig-zag in depth (z)
       x.current += dir.current * SPEED * delta
@@ -109,19 +129,17 @@ export default function GoldenRabbit({
   const handleShot = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return // left button only
     e.stopPropagation()
-    if (resolved.current) return
+    if (resolved.current || dying.current) return
     if (!useGameStore.getState().shoot()) return
     const region = e.uv ? regionAtUV(hitBoxesFor(type, 'run'), e.uv.x, e.uv.y) : null
     if (!region) return
 
-    const store = useGameStore.getState()
-    const bonus = region === 'head' ? GOLDEN.headshotBonus : 0
-    store.recordHit()
-    resolve(
-      true,
-      [{ region, points: GOLDEN.points, u: e.uv!.x, v: e.uv!.y, state: 'run' }],
-      bonus,
-    )
+    useGameStore.getState().recordHit()
+    // record the kill; the death animation (shrink) resolves it afterward
+    killShot.current = { region, points: GOLDEN.points, u: e.uv!.x, v: e.uv!.y, state: 'run' }
+    killBonus.current = region === 'head' ? GOLDEN.headshotBonus : 0
+    dying.current = true
+    deadT.current = 0
   }
 
   if (!active || !runF) return null
@@ -133,6 +151,7 @@ export default function GoldenRabbit({
         fps={type.fps.run}
         size={type.size}
         flipX={flipX}
+        rollRef={roll}
         onPointerDown={handleShot}
       />
     </group>
