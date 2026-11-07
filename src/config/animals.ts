@@ -175,7 +175,7 @@ export const ANIMALS: Record<string, AnimalType> = {
     health: 20,
     damage: { head: 20, heart: 20, body: 20 },
     killBonus: 0,
-    penalty: 300,
+    penalty: 1000,
   },
   // The rare golden rabbit — Mahir's face, appears once per game (see Scene).
   golden: {
