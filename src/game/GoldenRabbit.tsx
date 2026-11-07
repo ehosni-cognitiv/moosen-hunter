@@ -10,6 +10,7 @@ import {
   hitBoxesFor,
   regionAtUV,
 } from '../config/animals'
+import { playSfx } from '../audio/sfx'
 import { useHeightField } from './TerrainContext'
 import { useFrames } from '../sprites/useFrames'
 import AnimatedSprite from '../sprites/AnimatedSprite'
@@ -88,6 +89,7 @@ export default function GoldenRabbit({
         }
         setFlipX(axis.current === 'x' && dir.current < 0) // face travel direction
         setActive(true)
+        playSfx('goldenAppear') // the tell that it's on the map
       }
       return
     }
@@ -138,6 +140,7 @@ export default function GoldenRabbit({
     // record the kill; the death animation (shrink) resolves it afterward
     killShot.current = { region, points: GOLDEN.points, u: e.uv!.x, v: e.uv!.y, state: 'run' }
     killBonus.current = region === 'head' ? GOLDEN.headshotBonus : 0
+    playSfx('goldenKill')
     dying.current = true
     deadT.current = 0
   }

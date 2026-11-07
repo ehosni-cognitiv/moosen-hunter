@@ -3,30 +3,42 @@ import { useGameStore } from '../state/gameStore'
 import { TOTAL_LEVELS } from '../config/levels'
 import { ANIMALS, hitBoxesFor } from '../config/animals'
 import { makeAnimalFrames } from '../sprites/placeholders'
+import { playSfx } from '../audio/sfx'
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
+
+/** minimum gap between score-counter ticks, ms */
+const TICK_MS = 55
 
 const REGION_LABEL = { head: 'Head', heart: 'Heart', body: 'Body' } as const
 
 const subtotalOf = (r: { shots: { points: number }[]; bonus: number }) =>
   r.shots.reduce((s, x) => s + x.points, 0) + r.bonus
 
-/** Animates a number toward `target`, starting from `initial` (on mount). */
+/** Animates a number toward `target`, starting from `initial` (on mount), and
+ *  ratchets audibly while it climbs. */
 function useCountUp(target: number, initial: number) {
   const [value, setValue] = useState(initial)
   const valueRef = useRef(initial)
   useEffect(() => {
     const from = valueRef.current
     if (from === target) return
+    const rising = target > from
+    if (!rising) playSfx('tallyBad') // a ranger just took points off
     const start = performance.now()
     const dur = 450
     let raf = 0
+    let lastTick = 0
     const tick = (now: number) => {
       const t = Math.min((now - start) / dur, 1)
       const eased = 1 - Math.pow(1 - t, 3)
       const v = Math.round(from + (target - from) * eased)
       valueRef.current = v
       setValue(v)
+      if (rising && t < 1 && now - lastTick >= TICK_MS) {
+        lastTick = now
+        playSfx('tallyTick')
+      }
       if (t < 1) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)

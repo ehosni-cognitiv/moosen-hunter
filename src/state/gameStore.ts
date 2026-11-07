@@ -3,6 +3,7 @@ import { TOTAL_LEVELS } from '../config/levels'
 import { ANIMALS, type HitRegion } from '../config/animals'
 import type { AnimalState } from '../sprites/placeholders'
 import { loadLeaderboard, saveScore, type ScoreEntry } from './leaderboard'
+import { loadMuted, playSfx, setMuted, vary } from '../audio/sfx'
 
 export type Phase = 'title' | 'playing' | 'levelComplete' | 'gameover' | 'leaderboard'
 
@@ -53,6 +54,7 @@ interface GameState {
   /** bumped on every shot fired — the camera watches this to recoil/shake */
   recoilTick: number
   leaderboard: ScoreEntry[]
+  muted: boolean
 
   startGame: () => void
   startLevel: (level: number) => void
@@ -61,6 +63,7 @@ interface GameState {
   submitScore: (name: string) => void
   showLeaderboard: () => void
   backToTitle: () => void
+  toggleMute: () => void
 
   fire: () => boolean
   /** Fire a round: handles ammo, auto-reload on empty, and spooks the herd.
@@ -90,6 +93,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   goldenLevel: 0,
   recoilTick: 0,
   leaderboard: loadLeaderboard(),
+  muted: loadMuted(),
 
   startGame: () => {
     // The golden rabbit appears exactly once per game, in a random level after
@@ -113,6 +117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       levelAccuracyBonus: 0,
       levelScore: 0,
     })
+    playSfx('levelStart')
   },
 
   endLevel: () => {
@@ -145,12 +150,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       levelScore,
       phase: 'levelComplete',
     }))
+    playSfx('levelComplete')
   },
 
   nextLevel: () => {
     const next = get().level + 1
-    if (next > TOTAL_LEVELS) set({ phase: 'gameover' })
-    else get().startLevel(next)
+    if (next > TOTAL_LEVELS) {
+      set({ phase: 'gameover' })
+      playSfx('huntComplete')
+    } else get().startLevel(next)
   },
 
   submitScore: (name) => {
@@ -161,10 +169,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       date: new Date().toISOString(),
     })
     set({ leaderboard: board, phase: 'leaderboard' })
+    playSfx('scoreSubmit')
   },
 
   showLeaderboard: () => set({ phase: 'leaderboard' }),
   backToTitle: () => set({ phase: 'title' }),
+
+  toggleMute: () => {
+    const next = !get().muted
+    setMuted(next)
+    set({ muted: next })
+    if (!next) playSfx('uiClick') // confirm the sound is back
+  },
 
   fire: () => {
     const { ammo, reloading, phase } = get()
@@ -176,9 +192,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   shoot: () => {
     const s = get()
     if (!s.fire()) {
-      if (!s.reloading) s.reload()
+      if (!s.reloading) {
+        if (s.phase === 'playing') playSfx('dryFire')
+        s.reload()
+      }
       return false
     }
+    playSfx('shot', { rate: vary() })
     set((st) => ({ levelShots: st.levelShots + 1, recoilTick: st.recoilTick + 1 }))
     s.alertHerd()
     return true
@@ -188,11 +208,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { reloading, ammo, maxAmmo } = get()
     if (reloading || ammo >= maxAmmo) return
     set({ reloading: true })
+    playSfx('reload')
     setTimeout(() => {
       if (get().phase !== 'playing') {
         set({ reloading: false })
         return
       }
+      playSfx('reloadDone')
       set((s) => ({ ammo: s.maxAmmo, reloading: false }))
     }, RELOAD_MS)
   },
@@ -200,9 +222,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   alertHerd: () => {
     if (get().herdPhase !== 'calm') return
     set({ herdPhase: 'alert' })
+    playSfx('alert')
     setTimeout(() => {
-      if (get().phase === 'playing' && get().herdPhase === 'alert')
+      if (get().phase === 'playing' && get().herdPhase === 'alert') {
         set({ herdPhase: 'flee' })
+        playSfx('stampede')
+      }
     }, ALERT_MS)
   },
 

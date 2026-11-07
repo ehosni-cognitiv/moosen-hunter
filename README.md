@@ -17,6 +17,15 @@ in `src/game/Game.tsx`) with antialiasing off, and the canvas is scaled back up
 with `image-rendering: pixelated` (`src/index.css`). Bump `PIXELATION` for
 chunkier pixels.
 
+## Sound
+
+Every effect is synthesized at runtime from noise bursts and oscillators
+(`src/audio/placeholders.ts`) and cached as an `AudioBuffer` on first play
+(`src/audio/sfx.ts`) — the audio counterpart of the procedural sprite
+placeholders. Drop real files in later by swapping the body of `bufferFor()`;
+callers of `playSfx()` don't change. `M` (or the button at the bottom of the
+screen) mutes, and the choice is remembered.
+
 ## Getting started
 
 ```bash
@@ -36,4 +45,7 @@ src/
   game/
     Game.tsx      the <Canvas> and pixelation config
     Scene.tsx     lights, ground, and scene contents
+  audio/
+    placeholders.ts  procedural sound effects
+    sfx.ts           playback, caching, and mute
 ```

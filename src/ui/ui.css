@@ -98,6 +98,38 @@
   color: #000;
 }
 
+/* ---- sound toggle (bottom center, over every screen) -------------------- */
+.sound-toggle {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+.btn--sound {
+  pointer-events: auto;
+  font-size: 8px;
+  padding: 7px 10px;
+  border-width: 2px;
+  box-shadow: 2px 2px 0 #000;
+  color: var(--dim);
+  border-color: #444;
+}
+.btn--sound:hover {
+  background: var(--dim);
+  color: #000;
+}
+.btn--sound:active {
+  transform: translate(2px, 2px);
+}
+/* the crosshair replaces the cursor while hunting — keep it hidden here too */
+.app--playing .btn--sound {
+  cursor: none;
+}
+
 /* ---- score / name entry (game over) ------------------------------------- */
 .finalscore {
   font-size: 40px;

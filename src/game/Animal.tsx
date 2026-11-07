@@ -9,7 +9,9 @@ import {
   hitBoxesFor,
   regionAtUV,
   type AnimalType,
+  type HitRegion,
 } from '../config/animals'
+import { playSfx, vary, type SoundId } from '../audio/sfx'
 import { useHeightField } from './TerrainContext'
 import { useFrames } from '../sprites/useFrames'
 import AnimatedSprite from '../sprites/AnimatedSprite'
@@ -35,6 +37,15 @@ const FALL_TIME = 0.7 // how long a shot bird takes to fall to the ground
 // Flee slower than the raw speeds so the scatter lasts longer (~1.5×), giving
 // the player more time to hunt the fleeing herd.
 const SCATTER_SLOWDOWN = 1.5
+
+const HIT_SFX: Record<HitRegion, SoundId> = {
+  head: 'hitHead',
+  heart: 'hitHeart',
+  body: 'hitBody',
+}
+
+/** Bigger animals go down with a deeper grunt. */
+const killPitch = (height: number) => 1.35 - Math.min(height, 3.2) * 0.17
 
 export default function Animal({
   inst,
@@ -179,6 +190,7 @@ export default function Animal({
         v: e.uv!.y,
         state: displayState,
       })
+      playSfx('ranger')
       alive.current = false
       dying.current = true
       deadT.current = 0
@@ -187,10 +199,12 @@ export default function Animal({
 
     const points = SCORING[region]
     store.recordHit()
+    playSfx(HIT_SFX[region], { rate: vary() })
     shots.current.push({ region, points, u: e.uv!.x, v: e.uv!.y, state: displayState })
 
     health.current -= type.damage[region]
     if (health.current <= 0) {
+      playSfx('kill', { rate: killPitch(type.size[1]) })
       alive.current = false
       dying.current = true
       deadT.current = 0

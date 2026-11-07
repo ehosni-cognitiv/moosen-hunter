@@ -7,6 +7,7 @@ import TitleScreen from './ui/TitleScreen'
 import LevelComplete from './ui/LevelComplete'
 import GameOver from './ui/GameOver'
 import Leaderboard from './ui/Leaderboard'
+import SoundToggle from './ui/SoundToggle'
 import './App.css'
 import './ui/ui.css'
 
@@ -28,6 +29,7 @@ function App() {
       {phase === 'levelComplete' && <LevelComplete />}
       {phase === 'gameover' && <GameOver />}
       {phase === 'leaderboard' && <Leaderboard />}
+      <SoundToggle />
     </div>
   )
 }
