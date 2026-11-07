@@ -125,10 +125,6 @@
 .btn--sound:active {
   transform: translate(2px, 2px);
 }
-/* the crosshair replaces the cursor while hunting — keep it hidden here too */
-.app--playing .btn--sound {
-  cursor: none;
-}
 
 /* ---- score / name entry (game over) ------------------------------------- */
 .finalscore {
